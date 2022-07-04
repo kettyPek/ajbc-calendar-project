@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Doodle Calendar</title>
+<style>
+body {
+	background-color: powderblue;
+}
+
+h1 {
+	color: blue;
+	margin: 30px;
+}
+
+h2 {
+	color: blue;
+	margin: 30px;
+}
+
+label {
+	color: blue;
+	margin: 30px;
+}
+
+p {
+	color: red;
+}
+
+#email {
+	width: 300px;
+	margin: 30px;
+}
+
+.field {
+	color: red;
+	margin: 20px;
+}
+
+#alert {
+	color: red;
+	display: none;
+}
+
+#subscribeButton {
+	margin: 30px;
+}
+</style>
+</head>
+<body>
+	<h1>Doodle Calendar Notification Panel</h1>
+	<button id="subscribeButton">Subscribe</button>
+	<button id="unsubscribeButton" disabled>Unsubscribe</button>
+	<br />
+	<label>Email</label>
+	<input type="text" id="email">
+	<label id="alert"> Enter email before subscribing to
+		notification service</label>
+
+	<h2>Notification Information:</h2>
+	<div id="notification"></div>
+	<script src="client.js"></script>
+</body>
+</html>
