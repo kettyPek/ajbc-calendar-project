@@ -53,13 +53,14 @@ public class Notification {
 	@Enumerated(EnumType.STRING)
 	private Units units;
 
-	private Integer qiantity;
+	private Integer quantity;
 
-	public Notification(Event event, String title, Units units, Integer qiantity) {
+	public Notification(Event event, User user, String title, Units units, Integer qiantity) {
 		this.event = event;
+		this.user = user;
 		this.title = title;
 		this.units = units;
-		this.qiantity = qiantity;
+		this.quantity = qiantity;
 	}
 
 }

@@ -82,7 +82,7 @@ public class Event {
 	private List<String> guestsEmails;
 	
 
-	@JsonIgnore
+	@JsonProperty(access = Access.WRITE_ONLY)
 	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE })
 	private Set<Notification> notifications;
 
