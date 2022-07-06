@@ -12,16 +12,18 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import ajbc.doodle.calendar.enums.Units;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @Getter
 @Setter
-@AllArgsConstructor
+@NoArgsConstructor
 @ToString
 
 @Entity
@@ -32,22 +34,24 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer notificationId;
 
-	@JsonIgnore
+	
 	@Column(insertable = false, updatable = false)
 	private Integer eventId;
-	
+
+	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToOne
-    @JoinColumn(name="eventId")
+	@JoinColumn(name = "eventId")
 	private Event event;
+
 	
-	@JsonIgnore
 	@Column(insertable = false, updatable = false)
 	private Integer userId;
-	
+
+	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToOne
-    @JoinColumn(name="userId")
+	@JoinColumn(name = "userId")
 	private User user;
-	
+
 	private String title;
 
 	@Enumerated(EnumType.STRING)

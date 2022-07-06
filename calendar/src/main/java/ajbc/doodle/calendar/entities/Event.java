@@ -2,7 +2,9 @@ package ajbc.doodle.calendar.entities;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.persistence.CascadeType;
@@ -77,14 +79,16 @@ public class Event {
 	@ManyToMany(cascade = { CascadeType.MERGE })
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests;
-	
+
 	@Transient
 	private List<String> guestsEmails;
-	
 
 	@JsonProperty(access = Access.WRITE_ONLY)
 	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE })
 	private Set<Notification> notifications;
+
+	@Transient
+	private Map<Integer, List<Notification>> usersNotifications;
 
 	public Event(User owner, String title, boolean isAllDay, LocalDateTime startDateTime, LocalDateTime endDateTime,
 			String address, String description, RepeatOptions repeatOptions, boolean inactive, Set<User> guests) {
@@ -99,12 +103,15 @@ public class Event {
 		this.inactive = inactive;
 		this.guests = guests;
 	}
-	
+
 	@PostPersist
 	@PostUpdate
 	@PostLoad
 	private void updateGuestsEmails() {
 		guestsEmails = guests.stream().map(User::getEmail).collect(Collectors.toList());
+		if (notifications != null)
+			usersNotifications = notifications.stream().collect(Collectors.groupingBy(notif -> notif.getUserId()));
+
 	}
 
 }

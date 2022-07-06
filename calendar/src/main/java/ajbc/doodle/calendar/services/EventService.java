@@ -1,7 +1,7 @@
 package ajbc.doodle.calendar.services;
 
 import java.util.List;
-import java.util.Set;
+
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -20,7 +20,7 @@ public class EventService {
 
 	@Autowired
 	private EventDao eventDao;
-	
+
 	@Autowired
 	private UserDao userDao;
 
@@ -29,11 +29,11 @@ public class EventService {
 		event.setOwner(userDao.getUserById(id));
 		eventDao.addEvent(event);
 	}
-	
+
 	public void updateEvent(Event event) throws DaoException {
 		eventDao.updateEvent(event);
 	}
-	
+
 	// Queries
 
 	public Event getEventbyId(Integer eventId) throws DaoException {
@@ -49,10 +49,10 @@ public class EventService {
 	public List<Event> getAllEvents() throws DaoException {
 		return eventDao.getAllEvents();
 	}
-	
+
 	public boolean userIsOwner(int eventId, int userId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return (event.getOwnerId() == userId);
 	}
-	
+
 }

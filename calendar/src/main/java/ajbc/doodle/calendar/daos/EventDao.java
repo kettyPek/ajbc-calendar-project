@@ -26,5 +26,5 @@ public interface EventDao {
 	public default List<Event> getAllEvents() throws DaoException{
 		throw new DaoException("Method not implemented");
 	}
-	
+		
 }

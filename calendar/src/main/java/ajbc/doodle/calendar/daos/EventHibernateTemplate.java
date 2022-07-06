@@ -2,16 +2,12 @@ package ajbc.doodle.calendar.daos;
 
 import java.util.List;
 
-import org.hibernate.FetchMode;
-import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.HibernateTemplate;
 import org.springframework.stereotype.Component;
 
 import ajbc.doodle.calendar.entities.Event;
-import ajbc.doodle.calendar.entities.User;
 
 @SuppressWarnings("unchecked")
 @Component(value = "eventHT")
