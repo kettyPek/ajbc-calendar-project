@@ -33,23 +33,23 @@ public class EventController {
 		List<Event> events = eventService.getAllEvents();
 		return ResponseEntity.ok(events);
 	}
-	
+
 	@RequestMapping(method = RequestMethod.GET, path = "/userId/{id}")
-	public ResponseEntity<List<Event>> getAllEventsOfUserById(@PathVariable  Integer id) throws DaoException {
+	public ResponseEntity<List<Event>> getAllEventsOfUserById(@PathVariable Integer id) throws DaoException {
 		try {
 			List<Event> events = eventService.getAllEventsOfUser(id);
 			return ResponseEntity.ok(events);
-		}catch(DaoException e) {
+		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).build();
 		}
-		
+
 	}
 
 	@RequestMapping(method = RequestMethod.POST, path = "/{id}")
 	public ResponseEntity<?> createEvent(@RequestBody Event event, @PathVariable Integer id) {
 		try {
 			// TODO check if user logged in
-			eventService.addEvent(event,id);
+			eventService.addEvent(event, id);
 			event = eventService.getEventbyId(event.getEventId());
 			return ResponseEntity.status(HttpStatus.CREATED).body(event);
 		} catch (DaoException e) {
@@ -60,55 +60,17 @@ public class EventController {
 		}
 	}
 
-	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
-	public ResponseEntity<?> updateUser(@RequestBody Event event, @PathVariable Integer id) {
+	@RequestMapping(method = RequestMethod.PUT)
+	public ResponseEntity<?> updateEvent(@RequestBody Event event, @RequestParam Integer userId ,@RequestParam Integer eventId) {
 		try {
-			event.setEventId(id);
+			if(!eventService.userIsOwner(eventId,userId))
+				throw new DaoException("Only the owner can update the event");
+			event.setEventId(eventId);
 			eventService.updateEvent(event);
-			event = eventService.getEventbyId(id);
+			event = eventService.getEventbyId(eventId);
 			return ResponseEntity.status(HttpStatus.OK).body(event);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-//
-//	@RequestMapping(method = RequestMethod.GET, path = "/id/{id}")
-//	public ResponseEntity<?> getUserById(@PathVariable Integer id) throws DaoException {
-//		try {
-//			User user = userService.getUserById(id);
-//			return ResponseEntity.ok(user);
-//		} catch (DaoException e) {
-//			ErrorMessage errorMsg = new ErrorMessage();
-//			errorMsg.setData(e.getMessage());
-//			errorMsg.setMessage(e.getMessage());
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMsg);
-//		}
-//
-//	}
-//
-//	@RequestMapping(method = RequestMethod.GET, path = "/email/{email}")
-//	public ResponseEntity<?> getUserByEmail(@PathVariable String email) throws DaoException {
-//		try {
-//			User user = userService.getUserByEmail(email);
-//			return ResponseEntity.ok(user);
-//		} catch (DaoException e) {
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-//		}
-//	}
-//	
-//	@RequestMapping(method = RequestMethod.DELETE,path = "/{id}")
-//	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) throws DaoException {
-//		try {
-//			User user = userService.getUserById(id);
-//			if(deleteType.toUpperCase() == "HARD")
-//				userService.hardDeleteUser(user);
-//			else
-//				userService.softDeleteUser(user);
-//			System.out.println(deleteType);
-//			return ResponseEntity.ok(user);
-//		} catch (DaoException e) {
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-//		}
-//	}
-
 }
