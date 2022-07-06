@@ -1,5 +1,6 @@
 package ajbc.doodle.calendar.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -9,6 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import ajbc.doodle.calendar.enums.Units;
 import lombok.AllArgsConstructor;
@@ -29,9 +32,21 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer notificationId;
 
+	@JsonIgnore
+	@Column(insertable = false, updatable = false)
+	private Integer eventId;
+	
 	@ManyToOne
     @JoinColumn(name="eventId")
 	private Event event;
+	
+	@JsonIgnore
+	@Column(insertable = false, updatable = false)
+	private Integer userId;
+	
+	@ManyToOne
+    @JoinColumn(name="userId")
+	private User user;
 	
 	private String title;
 

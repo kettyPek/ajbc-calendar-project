@@ -31,6 +31,8 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import ajbc.doodle.calendar.enums.RepeatOptions;
 import lombok.Getter;
@@ -71,10 +73,13 @@ public class Event {
 
 	private boolean inactive;
 
-//	@JsonIgnore
-	@ManyToMany(cascade = { CascadeType.MERGE }, fetch = FetchType.EAGER)
+	@JsonProperty(access = Access.WRITE_ONLY)
+	@ManyToMany(cascade = { CascadeType.MERGE })
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests;
+	
+	@Transient
+	private List<String> guestsEmails;
 	
 
 	@JsonIgnore
@@ -93,6 +98,13 @@ public class Event {
 		this.Repeating = repeatOptions;
 		this.inactive = inactive;
 		this.guests = guests;
+	}
+	
+	@PostPersist
+	@PostUpdate
+	@PostLoad
+	private void updateGuestsEmails() {
+		guestsEmails = guests.stream().map(User::getEmail).collect(Collectors.toList());
 	}
 
 }

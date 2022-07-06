@@ -21,6 +21,8 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,9 +52,9 @@ public class User {
 	private LocalDate joinDate;
 	private boolean inactive;
 
-	@JsonIgnore
+	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToMany(mappedBy="guests")
-	private Set<Event> events = new HashSet<Event>();
+	private Set<Event> events ;
 
 	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate,
 			boolean inactive) {
