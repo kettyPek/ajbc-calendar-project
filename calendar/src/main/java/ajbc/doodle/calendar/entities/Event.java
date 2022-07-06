@@ -51,10 +51,10 @@ public class Event {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer eventId;
 
+	@JsonIgnore
 	@Column(insertable = false, updatable = false)
 	private Integer ownerId;
 
-	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "ownerId")
 	private User owner;

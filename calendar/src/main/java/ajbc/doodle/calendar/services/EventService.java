@@ -50,12 +50,9 @@ public class EventService {
 		return eventDao.getAllEvents();
 	}
 	
-	@Transactional
 	public boolean userIsOwner(int eventId, int userId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return (event.getOwnerId() == userId);
 	}
-
-	
 	
 }
