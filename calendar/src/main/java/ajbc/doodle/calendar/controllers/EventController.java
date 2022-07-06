@@ -2,6 +2,7 @@ package ajbc.doodle.calendar.controllers;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,18 +28,28 @@ public class EventController {
 	@Autowired
 	private EventService eventService;
 
-//	@RequestMapping(method = RequestMethod.GET)
-//	public ResponseEntity<List<User>> getAllUsers() throws DaoException {
-//		List<User> allusers = userService.getAllUsers();
-//		if (allusers == null)
-//			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-//		return ResponseEntity.ok(allusers);
-//	}
+	@RequestMapping(method = RequestMethod.GET)
+	public ResponseEntity<List<Event>> getAllEvents() throws DaoException {
+		List<Event> events = eventService.getAllEvents();
+		return ResponseEntity.ok(events);
+	}
+	
+	@RequestMapping(method = RequestMethod.GET, path = "/userId/{id}")
+	public ResponseEntity<List<Event>> getAllEventsOfUserById(@PathVariable  Integer id) throws DaoException {
+		try {
+			List<Event> events = eventService.getAllEventsOfUser(id);
+			return ResponseEntity.ok(events);
+		}catch(DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).build();
+		}
+		
+	}
 
 	@RequestMapping(method = RequestMethod.POST, path = "/{id}")
-	public ResponseEntity<?> createEvent(@RequestBody Event event, @PathVariable Integer userId) {
+	public ResponseEntity<?> createEvent(@RequestBody Event event, @PathVariable Integer id) {
 		try {
-			eventService.addEvent(event,userId);
+			// TODO check if user logged in
+			eventService.addEvent(event,id);
 			event = eventService.getEventbyId(event.getEventId());
 			return ResponseEntity.status(HttpStatus.CREATED).body(event);
 		} catch (DaoException e) {
@@ -49,20 +60,17 @@ public class EventController {
 		}
 	}
 
-//	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
-//	public ResponseEntity<?> updateUser(@RequestBody User user, @PathVariable Integer id) {
-//		try {
-//			user.setUserId(id);
-//			userService.updateUser(user);
-//			user = userService.getUserById(id);
-//			return ResponseEntity.status(HttpStatus.OK).body(user);
-//		} catch (DaoException e) {
-//			ErrorMessage errorMsg = new ErrorMessage();
-//			errorMsg.setData(e.getMessage());
-//			errorMsg.setMessage(e.getMessage());
-//			return ResponseEntity.status(HttpStatus.valueOf(500)).body(errorMsg);
-//		}
-//	}
+	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
+	public ResponseEntity<?> updateUser(@RequestBody Event event, @PathVariable Integer id) {
+		try {
+			event.setEventId(id);
+			eventService.updateEvent(event);
+			event = eventService.getEventbyId(id);
+			return ResponseEntity.status(HttpStatus.OK).body(event);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
 //
 //	@RequestMapping(method = RequestMethod.GET, path = "/id/{id}")
 //	public ResponseEntity<?> getUserById(@PathVariable Integer id) throws DaoException {

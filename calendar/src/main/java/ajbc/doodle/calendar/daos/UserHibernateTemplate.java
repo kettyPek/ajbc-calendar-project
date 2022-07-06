@@ -1,6 +1,5 @@
 package ajbc.doodle.calendar.daos;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import org.hibernate.criterion.Criterion;

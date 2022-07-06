@@ -1,9 +1,11 @@
 package ajbc.doodle.calendar.daos;
 
-
 import java.util.List;
 
+import org.hibernate.FetchMode;
+import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.HibernateTemplate;
 import org.springframework.stereotype.Component;
@@ -11,10 +13,9 @@ import org.springframework.stereotype.Component;
 import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.User;
 
-
 @SuppressWarnings("unchecked")
 @Component(value = "eventHT")
-public class EventHibernateTemplate implements EventDao{
+public class EventHibernateTemplate implements EventDao {
 
 	@Autowired
 	private HibernateTemplate template;
@@ -24,13 +25,19 @@ public class EventHibernateTemplate implements EventDao{
 	public void addEvent(Event event) throws DaoException {
 		template.persist(event);
 	}
+	
+	@Override
+	public void updateEvent(Event event) throws DaoException {
+		template.merge(event);
+	}
 
 	// Queries
-	
+
+
 	@Override
 	public Event getEventById(Integer eventId) throws DaoException {
 		Event event = template.get(Event.class, eventId);
-		if(event == null)
+		if (event == null)
 			throw new DaoException("Event doesnt exists");
 		return event;
 	}
@@ -40,21 +47,5 @@ public class EventHibernateTemplate implements EventDao{
 		DetachedCriteria criteria = DetachedCriteria.forClass(Event.class);
 		return (List<Event>) template.findByCriteria(criteria);
 	}
-	
-	
-	
-	
 
-	
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }
