@@ -102,20 +102,20 @@ public class PushController {
 		return this.serverKeys.getPublicKeyBase64();
 	}
 
-	@PostMapping("/subscribe/{email}")
-	@ResponseStatus(HttpStatus.CREATED)
-	public void subscribe(@RequestBody Subscription subscription, @PathVariable(required = false) String email) {
-		//if user is registered allow subscription
-		this.subscriptions.put(subscription.getEndpoint(), subscription);
-		System.out.println("Subscription added with email "+email);
-	}
-
-	
-	@PostMapping("/unsubscribe/{email}")
-	public void unsubscribe(@RequestBody SubscriptionEndpoint subscription, @PathVariable(required = false) String email) {
-		this.subscriptions.remove(subscription.getEndpoint());
-		System.out.println("Subscription with email "+email+" got removed!");
-	}
+//	@PostMapping("/subscribe/{email}")
+//	@ResponseStatus(HttpStatus.CREATED)
+//	public void subscribe(@RequestBody Subscription subscription, @PathVariable(required = false) String email) {
+//		//if user is registered allow subscription
+//		this.subscriptions.put(subscription.getEndpoint(), subscription);
+//		System.out.println("Subscription added with email "+email);
+//	}
+//
+//	
+//	@PostMapping("/unsubscribe/{email}")
+//	public void unsubscribe(@RequestBody SubscriptionEndpoint subscription, @PathVariable(required = false) String email) {
+//		this.subscriptions.remove(subscription.getEndpoint());
+//		System.out.println("Subscription with email "+email+" got removed!");
+//	}
 
 
 	@PostMapping("/isSubscribed")
@@ -125,39 +125,42 @@ public class PushController {
 
 
 	
-//	@Scheduled(fixedDelay = 3_000)
-//	public void testNotification() throws DaoException {
-//		List<User> users = userDao.getAllUsers();
-//		users.forEach(u -> {if(u.isLoggedIn()==true) {
-//			byte[] result;
-//			try {
-//				result = this.cryptoService.encrypt("yoyo",
-//						u.getP256dh(), u.getAuth(), 0);
-//				sendPushMessage(u.getEndPoint(),result);
-//			} catch (InvalidKeyException  | NoSuchAlgorithmException | InvalidKeySpecException
-//					| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
-//					| BadPaddingException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			
-//		}
-//			});
-//	}
-	
 	@Scheduled(fixedDelay = 3_000)
-	public void testNotification() {
-		if (this.subscriptions.isEmpty()) {
-			return;
-		}
-		try {
-			sendPushMessageToAllSubscribers(this.subscriptions, new PushMessage("message: ", "yy"));
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void testNotification() throws DaoException {
+		List<User> users = userDao.getAllUsers();
+		List<Notification> notif = notificationDao.getAllNotifications();
+		Object message = new PushMessage("message: ", notif.get(0).getTitle());
 
+		users.forEach(u -> {if(u.isLoggedIn()==true) {
+			byte[] result;
+			try {
+				result = this.cryptoService.encrypt(this.objectMapper.writeValueAsString(message),
+						u.getP256dh(), u.getAuth(), 0);
+				sendPushMessage(u.getEndPoint(),result);
+			} catch (InvalidKeyException  | NoSuchAlgorithmException | InvalidKeySpecException
+					| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
+					| BadPaddingException | JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+			});
 	}
+	
+//	@Scheduled(fixedDelay = 3_000)
+//	public void testNotification() {
+//		if (this.subscriptions.isEmpty()) {
+//			return;
+//		}
+//		try {
+//			sendPushMessageToAllSubscribers(this.subscriptions, new PushMessage("message: ", "yy"));
+//		} catch (JsonProcessingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//	}
 
 
 //	private void sendPushMessageToAllSubscribersWithoutPayload() {
@@ -171,28 +174,28 @@ public class PushController {
 //		failedSubscriptions.forEach(this.subscriptions::remove); 
 //	}
 
-	private void sendPushMessageToAllSubscribers(Map<String, Subscription> subs, Object message)
-			throws JsonProcessingException {
-
-		Set<String> failedSubscriptions = new HashSet<>();
-
-		for (Subscription subscription : subs.values()) {
-			try {
-				byte[] result = this.cryptoService.encrypt(this.objectMapper.writeValueAsString(message),
-						subscription.getKeys().getP256dh(), subscription.getKeys().getAuth(), 0);
-				boolean remove = sendPushMessage(subscription.getEndpoint(), result);
-				if (remove) {
-					failedSubscriptions.add(subscription.getEndpoint());
-				}
-			} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidAlgorithmParameterException
-					| IllegalStateException | InvalidKeySpecException | NoSuchPaddingException
-					| IllegalBlockSizeException | BadPaddingException e) {
-				Application.logger.error("send encrypted message", e);
-			}
-		}
-
-		failedSubscriptions.forEach(subs::remove);
-	}
+//	private void sendPushMessageToAllSubscribers(Map<String, Subscription> subs, Object message)
+//			throws JsonProcessingException {
+//
+//		Set<String> failedSubscriptions = new HashSet<>();
+//
+//		for (Subscription subscription : subs.values()) {
+//			try {
+//				byte[] result = this.cryptoService.encrypt(this.objectMapper.writeValueAsString(message),
+//						subscription.getKeys().getP256dh(), subscription.getKeys().getAuth(), 0);
+//				boolean remove = sendPushMessage(subscription.getEndpoint(), result);
+//				if (remove) {
+//					failedSubscriptions.add(subscription.getEndpoint());
+//				}
+//			} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidAlgorithmParameterException
+//					| IllegalStateException | InvalidKeySpecException | NoSuchPaddingException
+//					| IllegalBlockSizeException | BadPaddingException e) {
+//				Application.logger.error("send encrypted message", e);
+//			}
+//		}
+//
+//		failedSubscriptions.forEach(subs::remove);
+//	}
 
 	/**
 	 * @return true if the subscription is no longer valid and can be removed, false
