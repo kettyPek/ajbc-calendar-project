@@ -1,7 +1,8 @@
 package ajbc.doodle.calendar.services;
 
+import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
@@ -13,6 +14,7 @@ import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.EventDao;
 import ajbc.doodle.calendar.daos.UserDao;
 import ajbc.doodle.calendar.entities.Event;
+import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 
 @Component()
@@ -43,7 +45,14 @@ public class EventService {
 	@Transactional
 	public List<Event> getAllEventsOfUser(Integer userId) throws DaoException {
 		User user = userDao.getUserById(userId);
-		return user.getEvents().stream().collect(Collectors.toList());
+		List<Event> events = user.getEvents().stream().collect(Collectors.toList());
+		List<Event> result = new ArrayList<>();
+		for (Event event : events) {
+			Set<Notification> notifications = event.getNotifications().stream().filter(n -> n.getUserId() == userId).collect(Collectors.toSet());
+			event.setNotifications(notifications);
+			result.add(event);		
+		}
+		return result;
 	}
 
 	public List<Event> getAllEvents() throws DaoException {

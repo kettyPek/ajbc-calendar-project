@@ -31,6 +31,10 @@ import javax.persistence.Transient;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -76,19 +80,16 @@ public class Event {
 	private boolean inactive;
 
 	@JsonProperty(access = Access.WRITE_ONLY)
-	@ManyToMany(cascade = { CascadeType.MERGE })
+	@ManyToMany(cascade = { CascadeType.MERGE },fetch = FetchType.EAGER)
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests;
 
 	@Transient
 	private List<String> guestsEmails;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
-	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE })
+	
+	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE } , fetch = FetchType.EAGER)
 	private Set<Notification> notifications;
-
-	@Transient
-	private Map<Integer, List<Notification>> usersNotifications;
 
 	public Event(User owner, String title, boolean isAllDay, LocalDateTime startDateTime, LocalDateTime endDateTime,
 			String address, String description, RepeatOptions repeatOptions, boolean inactive, Set<User> guests) {
@@ -109,8 +110,6 @@ public class Event {
 	@PostLoad
 	private void updateGuestsEmails() {
 		guestsEmails = guests.stream().map(User::getEmail).collect(Collectors.toList());
-		if (notifications != null)
-			usersNotifications = notifications.stream().collect(Collectors.groupingBy(notif -> notif.getUserId()));
 
 	}
 
