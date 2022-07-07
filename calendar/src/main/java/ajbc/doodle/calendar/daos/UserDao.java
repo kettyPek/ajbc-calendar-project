@@ -36,5 +36,5 @@ public interface UserDao {
 
 	@Transactional(readOnly = false)
 	public void softDeleteUser(User user) throws DaoException;
-	
+
 }

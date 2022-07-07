@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.entities.ErrorMessage;
 import ajbc.doodle.calendar.entities.User;
+import ajbc.doodle.calendar.entities.webpush.Subscription;
 import ajbc.doodle.calendar.services.UserService;
 
 @RequestMapping("/users")
@@ -87,6 +88,29 @@ public class UserController {
 				userService.softDeleteUser(user);
 			System.out.println(deleteType);
 			return ResponseEntity.ok(user);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, path = "/login/{email}")
+	public ResponseEntity<?> logIn(@RequestBody Subscription subscription, @PathVariable(required = false) String email) throws DaoException {
+		try {
+			System.out.println(subscription.getKeys());
+			User user = userService.getUserByEmail(email);
+			userService.logInUser(subscription,user);
+			return ResponseEntity.ok().body("User logged in");
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, path = "/logout/{email}")
+	public ResponseEntity<?> logOut(@PathVariable(required = false) String email) throws DaoException {
+		try {
+			User user = userService.getUserByEmail(email);
+			userService.logOutUser(user);
+			return ResponseEntity.ok().body("User logged out");
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}

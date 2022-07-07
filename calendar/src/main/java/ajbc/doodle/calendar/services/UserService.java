@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.UserDao;
 import ajbc.doodle.calendar.entities.User;
+import ajbc.doodle.calendar.entities.webpush.Subscription;
 
 @Component()
 public class UserService {
@@ -41,5 +42,19 @@ public class UserService {
 
 	public void softDeleteUser(User user) throws DaoException {
 		userDao.softDeleteUser(user);	
+	}
+
+	public void logInUser(Subscription subscription, User user) throws DaoException {
+		user.setEndPoint(subscription.getEndpoint());
+		user.setP256dh(subscription.getKeys().getP256dh());
+		user.setAuth(subscription.getKeys().getAuth());
+		user.setLoggedIn(true);
+		userDao.updateUser(user);
+	}
+	
+	public void logOutUser(User user) throws DaoException {
+		user.setEndPoint(null);
+		user.setLoggedIn(false);
+		userDao.updateUser(user);
 	}	
 }

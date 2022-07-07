@@ -89,13 +89,4 @@ public class UserHibernateTemplate implements UserDao{
 		return true;
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }

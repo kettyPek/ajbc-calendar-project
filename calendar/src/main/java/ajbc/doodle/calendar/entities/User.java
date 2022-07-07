@@ -2,23 +2,18 @@ package ajbc.doodle.calendar.entities;
 
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.List;
+
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinTable;
-import javax.persistence.JoinColumn;
+
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -54,7 +49,14 @@ public class User {
 	private boolean loggedIn;
 
 	@JsonProperty(access = Access.WRITE_ONLY)
-	@ManyToMany(mappedBy="guests")
+	private String endPoint;
+	@JsonProperty(access = Access.WRITE_ONLY)
+	private String p256dh;
+	@JsonProperty(access = Access.WRITE_ONLY)
+	private String auth;
+
+	@JsonProperty(access = Access.WRITE_ONLY)
+	@ManyToMany(mappedBy = "guests")
 	private Set<Event> events = new HashSet<Event>();
 
 	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate) {
