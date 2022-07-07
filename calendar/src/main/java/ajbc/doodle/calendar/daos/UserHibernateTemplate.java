@@ -21,15 +21,19 @@ public class UserHibernateTemplate implements UserDao{
 	// CRUD
 	@Override
 	public void addUser(User user) throws DaoException {
+		if(emailExistInDb(user))
+			throw new DaoException("Email already exists");
 		template.persist(user);
 	}
 	
 	@Override
 	public void updateUser(User user) throws DaoException {
+		if(!userExistInDb(user.getUserId()))
+			throw new DaoException("No such user in DB");
+		if(emailExistInDb(user))
+			throw new DaoException("Email already exists");
 		template.merge(user);
 	}
-
-
 
 	// Queries
 	@Override
@@ -67,6 +71,22 @@ public class UserHibernateTemplate implements UserDao{
 	public void softDeleteUser(User user) throws DaoException {
 		user.setInactive(true);
 		updateUser(user);	
+	}
+	
+	private boolean emailExistInDb(User user) throws DaoException {
+		List<User> users = getAllUsers();
+		for(User u : users) {
+			if(u.getEmail().equals(user.getEmail()) && u.getUserId() != user.getUserId())
+				return true;
+		}
+		return false;
+	}
+	
+	private boolean userExistInDb(Integer userId) {
+		User user = template.get(User.class, userId);
+		if (user == null)
+			return false;
+		return true;
 	}
 	
 	

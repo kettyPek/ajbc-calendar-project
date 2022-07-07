@@ -47,11 +47,11 @@ public class DatabaseSeeder {
 		List<User> users = userDao.getAllUsers();
 		if (users == null || users.size() == 0) {
 			userDao.addUser(new User("ketty", "pekarsky", "ketty@gmail.com", LocalDate.of(1996, 05, 02),
-					LocalDate.now(), false));
+					LocalDate.now()));
 			userDao.addUser(
-					new User("dani", "kravtsov", "dani@gmail.com", LocalDate.of(1994, 04, 06), LocalDate.now(), false));
+					new User("dani", "kravtsov", "dani@gmail.com", LocalDate.of(1994, 04, 06), LocalDate.now()));
 			userDao.addUser(new User("nikol", "pekarsky", "nikol@gmail.com", LocalDate.of(2004, 04, 15),
-					LocalDate.now(), false));
+					LocalDate.now()));
 		}
 	}
 

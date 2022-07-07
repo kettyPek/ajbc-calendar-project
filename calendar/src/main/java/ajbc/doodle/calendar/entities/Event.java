@@ -1,6 +1,7 @@
 package ajbc.doodle.calendar.entities;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,14 +83,14 @@ public class Event {
 	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToMany(cascade = { CascadeType.MERGE },fetch = FetchType.EAGER)
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
-	private Set<User> guests;
-
+	private Set<User> guests = new HashSet<User>();
+	
 	@Transient
 	private List<String> guestsEmails;
 
-	
+	@JsonProperty(access = Access.READ_ONLY)
 	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE } , fetch = FetchType.EAGER)
-	private Set<Notification> notifications;
+	private Set<Notification> notifications = new HashSet<Notification>();
 
 	public Event(User owner, String title, boolean isAllDay, LocalDateTime startDateTime, LocalDateTime endDateTime,
 			String address, String description, RepeatOptions repeatOptions, boolean inactive, Set<User> guests) {

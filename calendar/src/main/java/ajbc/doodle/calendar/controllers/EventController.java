@@ -35,12 +35,12 @@ public class EventController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, path = "/userId/{id}")
-	public ResponseEntity<List<Event>> getAllEventsOfUserById(@PathVariable Integer id) throws DaoException {
+	public ResponseEntity<?> getAllEventsOfUserById(@PathVariable Integer id) throws DaoException {
 		try {
 			List<Event> events = eventService.getAllEventsOfUser(id);
 			return ResponseEntity.ok(events);
 		} catch (DaoException e) {
-			return ResponseEntity.status(HttpStatus.valueOf(500)).build();
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 
 	}
@@ -53,10 +53,7 @@ public class EventController {
 			event = eventService.getEventbyId(event.getEventId());
 			return ResponseEntity.status(HttpStatus.CREATED).body(event);
 		} catch (DaoException e) {
-			ErrorMessage errorMsg = new ErrorMessage();
-			errorMsg.setData(e.getMessage());
-			errorMsg.setMessage(e.getMessage());
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(errorMsg);
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 

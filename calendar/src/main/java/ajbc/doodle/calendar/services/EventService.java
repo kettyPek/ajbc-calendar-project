@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.EventDao;
@@ -42,7 +43,7 @@ public class EventService {
 		return eventDao.getEventById(eventId);
 	}
 
-	@Transactional
+	@Transactional(rollbackFor = { DaoException.class })
 	public List<Event> getAllEventsOfUser(Integer userId) throws DaoException {
 		User user = userDao.getUserById(userId);
 		List<Event> events = user.getEvents().stream().collect(Collectors.toList());

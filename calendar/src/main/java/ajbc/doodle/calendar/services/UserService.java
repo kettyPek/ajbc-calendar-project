@@ -41,8 +41,5 @@ public class UserService {
 
 	public void softDeleteUser(User user) throws DaoException {
 		userDao.softDeleteUser(user);	
-	}
-	
-	
-	
+	}	
 }

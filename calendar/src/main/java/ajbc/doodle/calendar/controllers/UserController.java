@@ -40,10 +40,7 @@ public class UserController {
 			user = userService.getUserById(user.getUserId());
 			return ResponseEntity.status(HttpStatus.CREATED).body(user);
 		} catch (DaoException e) {
-			ErrorMessage errorMsg = new ErrorMessage();
-			errorMsg.setData(e.getMessage());
-			errorMsg.setMessage(e.getMessage());
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(errorMsg);
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 
@@ -55,10 +52,7 @@ public class UserController {
 			user = userService.getUserById(id);
 			return ResponseEntity.status(HttpStatus.OK).body(user);
 		} catch (DaoException e) {
-			ErrorMessage errorMsg = new ErrorMessage();
-			errorMsg.setData(e.getMessage());
-			errorMsg.setMessage(e.getMessage());
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(errorMsg);
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 
@@ -68,10 +62,7 @@ public class UserController {
 			User user = userService.getUserById(id);
 			return ResponseEntity.ok(user);
 		} catch (DaoException e) {
-			ErrorMessage errorMsg = new ErrorMessage();
-			errorMsg.setData(e.getMessage());
-			errorMsg.setMessage(e.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMsg);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 
 	}
@@ -85,12 +76,12 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 	}
-	
-	@RequestMapping(method = RequestMethod.DELETE,path = "/{id}")
+
+	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
 	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) throws DaoException {
 		try {
 			User user = userService.getUserById(id);
-			if(deleteType.toUpperCase() == "HARD")
+			if (deleteType.toUpperCase() == "HARD")
 				userService.hardDeleteUser(user);
 			else
 				userService.softDeleteUser(user);

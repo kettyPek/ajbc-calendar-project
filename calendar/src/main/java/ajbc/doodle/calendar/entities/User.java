@@ -51,19 +51,20 @@ public class User {
 	private LocalDate birthDate;
 	private LocalDate joinDate;
 	private boolean inactive;
+	private boolean loggedIn;
 
 	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToMany(mappedBy="guests")
-	private Set<Event> events ;
+	private Set<Event> events = new HashSet<Event>();
 
-	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate,
-			boolean inactive) {
+	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate) {
 		this.firstName = fristName;
 		this.lastName = lastName;
 		this.email = email;
 		this.birthDate = birthDate;
 		this.joinDate = joinDate;
-		this.inactive = inactive;
+		this.inactive = false;
+		this.loggedIn = false;
 	}
 
 }
