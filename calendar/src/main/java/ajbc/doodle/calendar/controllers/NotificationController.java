@@ -108,7 +108,7 @@ public class NotificationController {
 		notMan.inntializeNotificationsQueue(notifications);
 		}
 	@Scheduled(initialDelay = 3_000 ,fixedDelay = 10_000)
-	public void run() throws DaoException {
+	public void run() throws DaoException, InterruptedException {
 		notMan.run();
 	}
 	

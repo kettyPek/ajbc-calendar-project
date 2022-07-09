@@ -14,6 +14,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -21,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.annotation.PostConstruct;
 import javax.crypto.BadPaddingException;
@@ -46,6 +49,7 @@ import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.PushMessage;
 import ajbc.doodle.calendar.enums.Units;
+import ajbc.doodle.calendar.notifications_manager.threads.SendNotification;
 import lombok.Setter;
 @Setter
 @Component
@@ -71,108 +75,152 @@ public class NotificationManager {
 	});
 	
 	private PushProp pushProps;
+	private ExecutorService executorService;
 	
 		
 	public void inntializeNotificationsQueue(List<Notification> notificationsList) {
+		executorService = Executors.newCachedThreadPool();
 		for(int i=0; i<notificationsList.size(); i++)
 			notificationsQueue.add(notificationsList.get(i));
 	}
 	
-	public void run() throws DaoException {
-		User user;
-		Object message;
-		System.out.println("in run()");
-		Notification not ;
-		while(!notificationsQueue.isEmpty()) {
-			not = notificationsQueue.poll();
-			user = userDao.getUserById(not.getUserId());
-			System.out.println(calculateNotificationTime(not));
-			if(user.isLoggedIn()) {
-				message = new PushMessage("message: ", not.getTitle());
-				byte[] result;
-				try {
-					result = pushProps.getCryptoService().encrypt(pushProps.getObjectMapper().writeValueAsString(message), user.getP256dh(),
-							user.getAuth(), 0);
-					sendPushMessage(user.getEndPoint(), result);
-					System.out.println("massge: " + not.getTitle() + " sent to user " + user.getEmail());
-					Thread.sleep(5000);
-				} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
-						| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
-						| BadPaddingException | JsonProcessingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+	public void run() throws DaoException, InterruptedException {
+		notificationsQueue.forEach(n -> {
+			try {
+				System.out.println(calculateNotificationTime(n));
+			} catch (DaoException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			
+		});
+		Notification currntNotification, nextNotification;
+		User user;
+		Duration duration;
+		while(!notificationsQueue.isEmpty()) {
+			currntNotification = notificationsQueue.poll();
+			user = userDao.getUserById(currntNotification.getUserId());
+			if(user.isLoggedIn()) 
+				executorService.execute(new SendNotification(user, currntNotification, pushProps));
+			else
+				System.out.println("not executed");
+			nextNotification = notificationsQueue.peek();
+			if(nextNotification!=null) {
+				duration = Duration.between(LocalDateTime.now(),calculateNotificationTime(nextNotification));
+				System.out.println("next notification: "+ calculateNotificationTime(nextNotification));
+				System.out.println(duration.toSeconds());
+				Thread.sleep((duration.toSeconds()-60)*1000);
+			}
 		}
 	}
 	
-	/**
-	 * @return true if the subscription is no longer valid and can be removed, false
-	 *         if everything is okay
-	 */
-	private boolean sendPushMessage(String endPoint, byte[] body) {
-		String origin = null;
-		try {
-			URL url = new URL(endPoint);
-			origin = url.getProtocol() + "://" + url.getHost();
-		} catch (MalformedURLException e) {
-			Application.logger.error("create origin", e);
-			return true;
-		}
-
-		Date today = new Date();
-		Date expires = new Date(today.getTime() + 12 * 60 * 60 * 1000);
-
-		String token = JWT.create().withAudience(origin).withExpiresAt(expires)
-				.withSubject("mailto:example@example.com").sign(pushProps.getJwtAlgorithm());
-
-		URI endpointURI = URI.create(endPoint);
-
-		Builder httpRequestBuilder = HttpRequest.newBuilder();
-		if (body != null) {
-			httpRequestBuilder.POST(BodyPublishers.ofByteArray(body)).header("Content-Type", "application/octet-stream")
-					.header("Content-Encoding", "aes128gcm");
-		} else {
-			httpRequestBuilder.POST(BodyPublishers.ofString("sososo"));
-			// httpRequestBuilder.header("Content-Length", "0");
-		}
-
-		HttpRequest request = httpRequestBuilder.uri(endpointURI).header("TTL", "180")
-				.header("Authorization", "vapid t=" + token + ", k=" + pushProps.getServerKeys().getPublicKeyBase64()).build();
-		try {
-			HttpResponse<Void> response = pushProps.getHttpClient().send(request, BodyHandlers.discarding());
-
-			switch (response.statusCode()) {
-			case 201:
-				Application.logger.info("Push message successfully sent: {}", endPoint);
-				break;
-			case 404:
-			case 410:
-				Application.logger.warn("Subscription not found or gone: {}", endPoint);
-				// remove subscription from our collection of subscriptions
-				return true;
-			case 429:
-				Application.logger.error("Too many requests: {}", request);
-				break;
-			case 400:
-				Application.logger.error("Invalid request: {}", request);
-				break;
-			case 413:
-				Application.logger.error("Payload size too large: {}", request);
-				break;
-			default:
-				Application.logger.error("Unhandled status code: {} / {}", response.statusCode(), request);
-			}
-		} catch (IOException | InterruptedException e) {
-			Application.logger.error("send push message", e);
-		}
-
-		return false;
-	}
+//	public void run() throws DaoException {
+//		User user;
+//		Object message;
+//		System.out.println("in run()");
+//		Notification not ,notNext;
+//		Duration duration ;
+//		while(!notificationsQueue.isEmpty()) {
+//			not = notificationsQueue.poll();
+//			notNext = notificationsQueue.peek();
+//			user = userDao.getUserById(not.getUserId());
+//			System.out.println("now: " + calculateNotificationTime(not));
+//			if(notNext!=null) {
+//				duration = Duration.between(calculateNotificationTime(notNext),LocalDateTime.now());
+//				System.out.println("next: " + calculateNotificationTime(notNext));
+//				System.out.println("minutes : "  + duration.toMinutes());
+//			}
+//			if(user.isLoggedIn()) {
+//				message = new PushMessage("message: ", not.getTitle());
+//				byte[] result;
+//				try {
+//					result = pushProps.getCryptoService().encrypt(pushProps.getObjectMapper().writeValueAsString(message), user.getP256dh(),
+//							user.getAuth(), 0);
+//					sendPushMessage(user.getEndPoint(), result);
+//					System.out.println("massge: " + not.getTitle() + " sent to user " + user.getEmail());
+//					
+//					
+//				} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
+//						| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
+//						| BadPaddingException | JsonProcessingException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//			try {
+//				Thread.sleep(5000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			
+//		}
+//	}
+	
+	
+	
+//	/**
+//	 * @return true if the subscription is no longer valid and can be removed, false
+//	 *         if everything is okay
+//	 */
+//	private boolean sendPushMessage(String endPoint, byte[] body) {
+//		String origin = null;
+//		try {
+//			URL url = new URL(endPoint);
+//			origin = url.getProtocol() + "://" + url.getHost();
+//		} catch (MalformedURLException e) {
+//			Application.logger.error("create origin", e);
+//			return true;
+//		}
+//
+//		Date today = new Date();
+//		Date expires = new Date(today.getTime() + 12 * 60 * 60 * 1000);
+//
+//		String token = JWT.create().withAudience(origin).withExpiresAt(expires)
+//				.withSubject("mailto:example@example.com").sign(pushProps.getJwtAlgorithm());
+//
+//		URI endpointURI = URI.create(endPoint);
+//
+//		Builder httpRequestBuilder = HttpRequest.newBuilder();
+//		if (body != null) {
+//			httpRequestBuilder.POST(BodyPublishers.ofByteArray(body)).header("Content-Type", "application/octet-stream")
+//					.header("Content-Encoding", "aes128gcm");
+//		} else {
+//			httpRequestBuilder.POST(BodyPublishers.ofString("sososo"));
+//			// httpRequestBuilder.header("Content-Length", "0");
+//		}
+//
+//		HttpRequest request = httpRequestBuilder.uri(endpointURI).header("TTL", "180")
+//				.header("Authorization", "vapid t=" + token + ", k=" + pushProps.getServerKeys().getPublicKeyBase64()).build();
+//		try {
+//			HttpResponse<Void> response = pushProps.getHttpClient().send(request, BodyHandlers.discarding());
+//
+//			switch (response.statusCode()) {
+//			case 201:
+//				Application.logger.info("Push message successfully sent: {}", endPoint);
+//				break;
+//			case 404:
+//			case 410:
+//				Application.logger.warn("Subscription not found or gone: {}", endPoint);
+//				// remove subscription from our collection of subscriptions
+//				return true;
+//			case 429:
+//				Application.logger.error("Too many requests: {}", request);
+//				break;
+//			case 400:
+//				Application.logger.error("Invalid request: {}", request);
+//				break;
+//			case 413:
+//				Application.logger.error("Payload size too large: {}", request);
+//				break;
+//			default:
+//				Application.logger.error("Unhandled status code: {} / {}", response.statusCode(), request);
+//			}
+//		} catch (IOException | InterruptedException e) {
+//			Application.logger.error("send push message", e);
+//		}
+//
+//		return false;
+//	}
 	
 	private LocalDateTime calculateNotificationTime(Notification notification) throws DaoException {
 		Event event = eventDao.getEventById(notification.getEventId());

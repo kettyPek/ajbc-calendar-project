@@ -26,7 +26,7 @@ public class DatabaseSeeder {
 
 	private final RepeatOptions NONE_REP = RepeatOptions.NONE;
 	private final Units REMINDER_UNITS = Units.MINUTES;
-	private final LocalDateTime EVENT_DATE_TIME = LocalDateTime.now();
+	private final LocalDateTime EVENT_DATE_TIME = LocalDateTime.now().plusMinutes(7);
 	private final LocalDateTime EVENT_DATE_TIME_END = LocalDateTime.now().plusHours(2);
 	private final int NOTIFY_BEFORE = 1;
 
@@ -90,9 +90,9 @@ public class DatabaseSeeder {
 		if (notifications == null || notifications.size() == 0) {
 			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE));
 			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE+1));
-			notificationDao.addNotificationToDb(new Notification(event2, user2, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE+2));
-			notificationDao.addNotificationToDb(new Notification(event2, user3, "Buy gift", REMINDER_UNITS, NOTIFY_BEFORE+3));
-			notificationDao.addNotificationToDb(new Notification(event2, user1, "Congrat", REMINDER_UNITS, NOTIFY_BEFORE+4));
+			notificationDao.addNotificationToDb(new Notification(event2, user3, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE+2));
+			notificationDao.addNotificationToDb(new Notification(event2, user2, "Buy gift", REMINDER_UNITS, NOTIFY_BEFORE+2));
+			notificationDao.addNotificationToDb(new Notification(event2, user1, "Congrat", REMINDER_UNITS, NOTIFY_BEFORE+3));
 		}
 	}
 
