@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,6 +18,7 @@ import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.entities.ErrorMessage;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.Subscription;
+import ajbc.doodle.calendar.entities.webpush.SubscriptionEndpoint;
 import ajbc.doodle.calendar.services.UserService;
 
 @RequestMapping("/users")
@@ -96,7 +98,6 @@ public class UserController {
 	@RequestMapping(method = RequestMethod.POST, path = "/login/{email}")
 	public ResponseEntity<?> logIn(@RequestBody Subscription subscription, @PathVariable(required = false) String email) throws DaoException {
 		try {
-			System.out.println(subscription.getKeys());
 			User user = userService.getUserByEmail(email);
 			userService.logInUser(subscription,user);
 			return ResponseEntity.ok().body("User logged in");
@@ -114,6 +115,15 @@ public class UserController {
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
+	}
+	
+	@PostMapping("/isSubscribed")
+	public boolean isSubscribed(@RequestBody SubscriptionEndpoint subscription) throws DaoException {
+		List<User> users = userService.getAllUsers();
+		for(User u : users)
+			if(u.getEndPoint().equals(subscription.getEndpoint()))
+					return true;
+			return false;
 	}
 
 }
