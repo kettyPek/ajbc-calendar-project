@@ -21,4 +21,8 @@ public interface NotificationDao {
 	public default List<Notification> getAllNotifications() throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
+	
+	public default List<Notification> getAllNotificationsOfUserByEentId(Integer userId, Integer eventId) throws DaoException {
+		throw new DaoException("Method not implemented");
+	} 
 }
