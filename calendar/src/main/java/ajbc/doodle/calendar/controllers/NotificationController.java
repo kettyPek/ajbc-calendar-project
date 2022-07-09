@@ -106,8 +106,11 @@ public class NotificationController {
 		notMan.setPushProps(pushProps);
 		List<Notification> notifications = notificationDao.getAllNotifications();
 		notMan.inntializeNotificationsQueue(notifications);
-//		notMan.run();
 		}
+	@Scheduled(initialDelay = 3_000 ,fixedDelay = 10_000)
+	public void run() throws DaoException {
+		notMan.run();
+	}
 	
 //	@Scheduled(fixedDelay = 3_000)
 //	public void testNotification() throws DaoException {

@@ -25,7 +25,10 @@ import ajbc.doodle.calendar.enums.Units;
 public class DatabaseSeeder {
 
 	private final RepeatOptions NONE_REP = RepeatOptions.NONE;
-	private final Units HOURS = Units.HOURS;
+	private final Units REMINDER_UNITS = Units.MINUTES;
+	private final LocalDateTime EVENT_DATE_TIME = LocalDateTime.now();
+	private final LocalDateTime EVENT_DATE_TIME_END = LocalDateTime.now().plusHours(2);
+	private final int NOTIFY_BEFORE = 1;
 
 	@Autowired
 	private UserDao userDao;
@@ -68,10 +71,10 @@ public class DatabaseSeeder {
 
 		List<Event> events = eventDao.getAllEvents();
 		if (events == null || events.size() == 0) {
-			eventDao.addEvent(new Event(owner1, "Exam", false, LocalDateTime.of(2022, 07, 10, 10, 0),
-					LocalDateTime.of(2022, 07, 10, 15, 0), "Technion", "Java", NONE_REP, false, guests1));
-			eventDao.addEvent(new Event(owner2, "Party", false, LocalDateTime.of(2022, 07, 10, 10, 0),
-					LocalDateTime.of(2022, 07, 10, 15, 0), "Home", "Birthday", NONE_REP, false, guests2));
+			eventDao.addEvent(new Event(owner1, "Exam", false, EVENT_DATE_TIME,
+					EVENT_DATE_TIME_END, "Technion", "Java", NONE_REP, false, guests1));
+			eventDao.addEvent(new Event(owner2, "Party", false, EVENT_DATE_TIME,
+					EVENT_DATE_TIME_END, "Home", "Birthday", NONE_REP, false, guests2));
 		}
 	}
 
@@ -85,11 +88,11 @@ public class DatabaseSeeder {
 
 		List<Notification> notifications = notificationDao.getAllNotifications();
 		if (notifications == null || notifications.size() == 0) {
-			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", HOURS, 10));
-			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", HOURS, 5));
-			notificationDao.addNotificationToDb(new Notification(event2, user2, "Clean up", HOURS, 3));
-			notificationDao.addNotificationToDb(new Notification(event2, user3, "Buy gift", HOURS, 10));
-			notificationDao.addNotificationToDb(new Notification(event2, user1, "Congrat", HOURS, 1));
+			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE));
+			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE+1));
+			notificationDao.addNotificationToDb(new Notification(event2, user2, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE+2));
+			notificationDao.addNotificationToDb(new Notification(event2, user3, "Buy gift", REMINDER_UNITS, NOTIFY_BEFORE+3));
+			notificationDao.addNotificationToDb(new Notification(event2, user1, "Congrat", REMINDER_UNITS, NOTIFY_BEFORE+4));
 		}
 	}
 

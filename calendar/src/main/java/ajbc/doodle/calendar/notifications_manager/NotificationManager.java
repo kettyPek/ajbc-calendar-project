@@ -13,9 +13,11 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -36,11 +38,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import ajbc.doodle.calendar.Application;
 import ajbc.doodle.calendar.PushProp;
 import ajbc.doodle.calendar.daos.DaoException;
+import ajbc.doodle.calendar.daos.EventDao;
 import ajbc.doodle.calendar.daos.NotificationDao;
 import ajbc.doodle.calendar.daos.UserDao;
+import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.PushMessage;
+import ajbc.doodle.calendar.enums.Units;
 import lombok.Setter;
 @Setter
 @Component
@@ -52,10 +57,17 @@ public class NotificationManager {
 	@Autowired
 	private NotificationDao notificationDao;
 	
+	@Autowired
+	private EventDao eventDao;
+	
 	private Queue<Notification> notificationsQueue  = new PriorityQueue<Notification>(new Comparator<Notification>() {
 		@Override
 		public int compare(Notification n1, Notification n2) {
-			return n1.getUserId() - n2.getUserId();	}
+			try {
+				return calculateNotificationTime(n1).isBefore(calculateNotificationTime(n2))? -1: 1;
+			} catch (DaoException e) {
+				return 1;
+			}	}
 	});
 	
 	private PushProp pushProps;
@@ -69,18 +81,20 @@ public class NotificationManager {
 	public void run() throws DaoException {
 		User user;
 		Object message;
-		System.out.println("in");
-		for(Notification notif : notificationsQueue) {
-			user = userDao.getUserById(notif.getUserId());
-			System.out.println("inin");
-			System.out.println(user.isLoggedIn());
+		System.out.println("in run()");
+		Notification not ;
+		while(!notificationsQueue.isEmpty()) {
+			not = notificationsQueue.poll();
+			user = userDao.getUserById(not.getUserId());
+			System.out.println(calculateNotificationTime(not));
 			if(user.isLoggedIn()) {
-				message = new PushMessage("message: ", notif.getTitle());
+				message = new PushMessage("message: ", not.getTitle());
 				byte[] result;
 				try {
 					result = pushProps.getCryptoService().encrypt(pushProps.getObjectMapper().writeValueAsString(message), user.getP256dh(),
 							user.getAuth(), 0);
 					sendPushMessage(user.getEndPoint(), result);
+					System.out.println("massge: " + not.getTitle() + " sent to user " + user.getEmail());
 					Thread.sleep(5000);
 				} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
 						| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
@@ -158,6 +172,16 @@ public class NotificationManager {
 		}
 
 		return false;
+	}
+	
+	private LocalDateTime calculateNotificationTime(Notification notification) throws DaoException {
+		Event event = eventDao.getEventById(notification.getEventId());
+		LocalDateTime date;
+		if(notification.getUnits() == Units.HOURS)
+			date = event.getStartDateTime().minusHours(notification.getQuantity());
+		else
+			date = event.getStartDateTime().minusMinutes(notification.getQuantity());
+		return date;
 	}
 	
 	
