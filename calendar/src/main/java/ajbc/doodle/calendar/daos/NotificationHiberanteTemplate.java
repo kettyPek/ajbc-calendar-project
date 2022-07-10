@@ -35,4 +35,16 @@ public class NotificationHiberanteTemplate implements NotificationDao {
 				.findByCriteria(criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY));
 	}
 
+	@Override
+	public List<Notification> getNotificationsByUserIdAndEventId(Integer userId, Integer eventId) throws DaoException {
+		DetachedCriteria criteria = DetachedCriteria.forClass(Notification.class);
+		Criterion criterionUserId = Restrictions.eq("userId", userId);
+		Criterion criterionEventId = Restrictions.eq("eventId", eventId);
+		criteria.add(criterionUserId).add(criterionEventId);
+		return (List<Notification>)template.findByCriteria(criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY));
+		
+	}
+	
+	
+
 }

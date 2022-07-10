@@ -80,7 +80,8 @@ public class Event {
 
 	private boolean inactive;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonProperty(access = Access.READ_ONLY)
+//	@JsonProperty(access = Access.WRITE_ONLY)
 	@ManyToMany(cascade = { CascadeType.MERGE },fetch = FetchType.EAGER)
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests = new HashSet<User>();

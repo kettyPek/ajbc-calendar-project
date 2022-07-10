@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.EventDao;
@@ -36,10 +37,20 @@ public class NotificationServcie {
 	public List<Notification> getAllNotifications() throws DaoException {
 		return notificationDao.getAllNotifications();
 	}
+	
+	public List<Notification> getAllNotificationsOfUserForEvent(Integer userId, Integer eventId) throws DaoException {
+		return notificationDao.getNotificationsByUserIdAndEventId(userId, eventId);
+	} 
+	@Transactional
+	public Notification getLastLoggedNotification(Integer userId, Integer eventId) throws DaoException {
+		List<Notification> notifications =  notificationDao.getNotificationsByUserIdAndEventId(userId, eventId);
+		return  notifications.get(notifications.size()-1);
+	}
 
 	private boolean userIsParticipant(int eventId, int userId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return event.getGuests().stream().map(User::getUserId).anyMatch(id -> id == userId);
 	}
+
 
 }

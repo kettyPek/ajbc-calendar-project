@@ -42,7 +42,7 @@ public class Notification {
 	@Column(insertable = false, updatable = false)
 	private Integer eventId;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "eventId")
 	private Event event;
@@ -51,7 +51,7 @@ public class Notification {
 	@Column(insertable = false, updatable = false)
 	private Integer userId;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "userId")
 	private User user;

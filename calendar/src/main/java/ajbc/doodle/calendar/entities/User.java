@@ -7,7 +7,7 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -55,8 +55,8 @@ public class User {
 	@JsonProperty(access = Access.WRITE_ONLY)
 	private String auth;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
-	@ManyToMany(mappedBy = "guests")
+	@JsonIgnore
+	@ManyToMany(mappedBy = "guests", fetch = FetchType.EAGER)
 	private Set<Event> events = new HashSet<Event>();
 
 	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate) {

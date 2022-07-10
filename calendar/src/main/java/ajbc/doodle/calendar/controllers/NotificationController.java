@@ -1,6 +1,7 @@
 package ajbc.doodle.calendar.controllers;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -47,23 +48,30 @@ public class NotificationController {
 		try {
 			// TODO check if user logged in
 			notificationService.addNotificationToEventOfUser(userId, eventId, notification);
-//			notification = notificationService.getLastAddedNotificationByUserIsEventId(userId, eventId);
-			notificationManager.addNotification(notification);
+			notification = notificationService.getLastLoggedNotification(eventId, eventId);
+			System.out.println(notification.getNotificationId());
+//			notificationManager.addNotification(notification);
 			return ResponseEntity.status(HttpStatus.CREATED).build();
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-
+	
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<?> getAllNotifications() {
+	public ResponseEntity<?> getNotifications(@RequestParam Map<String, String> map) {
+		List<Notification> notifications;
 		try {
-			List<Notification> notifications = notificationService.getAllNotifications();
-			return ResponseEntity.status(HttpStatus.CREATED).body(notifications);
+			if(map.containsKey("userId") && map.containsKey("eventId"))
+				notifications = notificationService.getAllNotificationsOfUserForEvent(Integer.parseInt(map.get("userId")), Integer.parseInt(map.get("eventId")));
+			else
+				notifications = notificationService.getAllNotifications();
+			return ResponseEntity.status(HttpStatus.OK).body(notifications);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
+	
+	
 
 	@GetMapping(path = "/publicSigningKey", produces = "application/octet-stream")
 	public byte[] publicSigningKey() {
@@ -82,9 +90,9 @@ public class NotificationController {
 		notificationManager.inntializeNotificationsQueue(notifications);
 	}
 
-	@Scheduled(initialDelay = 3_000, fixedDelay = 10_000)
-	public void run() throws DaoException, InterruptedException {
-		notificationManager.run();
-	}
+//	@Scheduled(initialDelay = 3_000, fixedDelay = 10_000)
+//	public void run() throws DaoException, InterruptedException {
+//		notificationManager.run();
+//	}
 
 }

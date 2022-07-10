@@ -121,7 +121,7 @@ public class UserController {
 	public boolean isSubscribed(@RequestBody SubscriptionEndpoint subscription) throws DaoException {
 		List<User> users = userService.getAllUsers();
 		for(User u : users)
-			if(u.getEndPoint().equals(subscription.getEndpoint()))
+			if(u.getEndPoint() != null && u.getEndPoint().equals(subscription.getEndpoint()))
 					return true;
 			return false;
 	}
