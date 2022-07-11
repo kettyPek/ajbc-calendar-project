@@ -49,20 +49,20 @@ public class NotificationController {
 			// TODO check if user logged in
 			notificationService.addNotificationToEventOfUser(userId, eventId, notification);
 			notification = notificationService.getLastLoggedNotification(eventId, eventId);
-			System.out.println(notification.getNotificationId());
-//			notificationManager.addNotification(notification);
+			notificationManager.addNotification(notification);
 			return ResponseEntity.status(HttpStatus.CREATED).build();
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<?> getNotifications(@RequestParam Map<String, String> map) {
 		List<Notification> notifications;
 		try {
-			if(map.containsKey("userId") && map.containsKey("eventId"))
-				notifications = notificationService.getAllNotificationsOfUserForEvent(Integer.parseInt(map.get("userId")), Integer.parseInt(map.get("eventId")));
+			if (map.containsKey("userId") && map.containsKey("eventId"))
+				notifications = notificationService.getAllNotificationsOfUserForEvent(
+						Integer.parseInt(map.get("userId")), Integer.parseInt(map.get("eventId")));
 			else
 				notifications = notificationService.getAllNotifications();
 			return ResponseEntity.status(HttpStatus.OK).body(notifications);
@@ -70,8 +70,6 @@ public class NotificationController {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-	
-	
 
 	@GetMapping(path = "/publicSigningKey", produces = "application/octet-stream")
 	public byte[] publicSigningKey() {
@@ -90,9 +88,9 @@ public class NotificationController {
 		notificationManager.inntializeNotificationsQueue(notifications);
 	}
 
-//	@Scheduled(initialDelay = 3_000, fixedDelay = 10_000)
-//	public void run() throws DaoException, InterruptedException {
-//		notificationManager.run();
-//	}
+	@Scheduled(initialDelay = 3_000, fixedDelay = 1000_000)
+	public void run() throws DaoException, InterruptedException {
+		notificationManager.initiateThread();
+	}
 
 }

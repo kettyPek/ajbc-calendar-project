@@ -8,8 +8,15 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -26,6 +33,7 @@ import ajbc.doodle.calendar.entities.User;
 
 import ajbc.doodle.calendar.enums.Units;
 import ajbc.doodle.calendar.notifications_manager.threads.SendNotification;
+import lombok.Getter;
 import lombok.Setter;
 
 @Setter
@@ -51,22 +59,37 @@ public class NotificationManager {
 
 	private PushProp pushProps;
 	private ExecutorService executorService;
+	private Thread th;
 
 	public void inntializeNotificationsQueue(List<Notification> notificationsList) {
-		executorService = Executors.newCachedThreadPool();
+		executorService = Executors.newCachedThreadPool();		
 		for (int i = 0; i < notificationsList.size(); i++)
 			notificationsQueue.add(notificationsList.get(i));
 	}
 
+
+	public void initiateThread() throws DaoException {
+		System.out.println("in initiateThread()");
+		int waitingTime = Duration.between(LocalDateTime.now(), calculateNotificationTime(notificationsQueue.peek()))
+				.toSecondsPart();
+		th = new Thread(() -> {try {
+			run();
+		} catch (DaoException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}});
+		try {
+			Thread.sleep(waitingTime);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		th.start();
+
+	}
+
+
 	public void run() throws DaoException, InterruptedException {
-		notificationsQueue.forEach(n -> {
-			try {
-				System.out.println(calculateNotificationTime(n));
-			} catch (DaoException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
 		Notification currntNotification, nextNotification;
 		User user;
 		Duration duration;
@@ -82,59 +105,28 @@ public class NotificationManager {
 				duration = Duration.between(LocalDateTime.now(), calculateNotificationTime(nextNotification));
 				System.out.println("next notification: " + calculateNotificationTime(nextNotification));
 				System.out.println(duration.toSeconds());
-				Thread.sleep((duration.toSeconds() - 60) * 1000);
+				try{
+					Thread.sleep(duration.toSeconds() * 1000);
+				}catch(InterruptedException e) {
+					System.out.println("inettapted");
+					break;
+				}
 			}
 		}
 	}
-	
-	public void addNotification(Notification notification) {
-		notificationsQueue.add(notification);
+
+	public void addNotification(Notification notification) throws DaoException {
+		if(notificationIsEarliest(notification)) {
+			th.interrupt();
+			notificationsQueue.add(notification);
+			initiateThread();
+		}
+		else
+			notificationsQueue.add(notification);	
 	}
 
-//	public void run() throws DaoException {
-//		User user;
-//		Object message;
-//		System.out.println("in run()");
-//		Notification not ,notNext;
-//		Duration duration ;
-//		while(!notificationsQueue.isEmpty()) {
-//			not = notificationsQueue.poll();
-//			notNext = notificationsQueue.peek();
-//			user = userDao.getUserById(not.getUserId());
-//			System.out.println("now: " + calculateNotificationTime(not));
-//			if(notNext!=null) {
-//				duration = Duration.between(calculateNotificationTime(notNext),LocalDateTime.now());
-//				System.out.println("next: " + calculateNotificationTime(notNext));
-//				System.out.println("minutes : "  + duration.toMinutes());
-//			}
-//			if(user.isLoggedIn()) {
-//				message = new PushMessage("message: ", not.getTitle());
-//				byte[] result;
-//				try {
-//					result = pushProps.getCryptoService().encrypt(pushProps.getObjectMapper().writeValueAsString(message), user.getP256dh(),
-//							user.getAuth(), 0);
-//					sendPushMessage(user.getEndPoint(), result);
-//					System.out.println("massge: " + not.getTitle() + " sent to user " + user.getEmail());
-//					
-//					
-//				} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
-//						| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
-//						| BadPaddingException | JsonProcessingException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//			}
-//			try {
-//				Thread.sleep(5000);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			
-//		}
-//	}
 
-	private LocalDateTime calculateNotificationTime(Notification notification) throws DaoException {
+	public LocalDateTime calculateNotificationTime(Notification notification) throws DaoException {
 		Event event = eventDao.getEventById(notification.getEventId());
 		LocalDateTime date;
 		if (notification.getUnits() == Units.HOURS)
@@ -142,6 +134,12 @@ public class NotificationManager {
 		else
 			date = event.getStartDateTime().minusMinutes(notification.getQuantity());
 		return date;
+	}
+	
+	private boolean notificationIsEarliest(Notification notification) throws DaoException {
+		LocalDateTime startOfNewNotification = calculateNotificationTime(notification);
+		LocalDateTime startOfFirstInQueue = calculateNotificationTime(notificationsQueue.peek());
+		return (startOfNewNotification.isBefore(startOfFirstInQueue)) ;
 	}
 
 }
