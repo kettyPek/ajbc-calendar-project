@@ -22,11 +22,26 @@ public class NotificationHiberanteTemplate implements NotificationDao {
 	// CRUD
 
 	@Override
+	public Notification getNotificationsById(Integer notificationId) throws DaoException {
+		Notification notification = template.get(Notification.class, notificationId);
+		if(notification == null)
+			throw new DaoException("Notification with id " + notificationId + " is not in DB");
+		return notification;
+	}
+	
+	@Override
 	public void addNotificationToDb(Notification notification) throws DaoException {
+		// TODO check if notification exists
 		template.persist(notification);
+	}
+	
+	@Override
+	public void updateNotificationToDb(Notification notification) throws DaoException {
+		template.merge(notification);
 	}
 
 	// Queries
+
 
 	@Override
 	public List<Notification> getAllNotifications() throws DaoException {

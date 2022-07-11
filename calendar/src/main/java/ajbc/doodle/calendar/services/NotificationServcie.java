@@ -25,6 +25,12 @@ public class NotificationServcie {
 
 	@Autowired
 	private UserDao userDao;
+	
+	// CRUD
+	
+	public Notification getNotificationById(Integer notificationId) throws DaoException {
+		return notificationDao.getNotificationsById(notificationId);
+	}
 
 	public void addNotificationToEventOfUser(int userId, int eventId, Notification notification) throws DaoException {
 		if (!userIsParticipant(eventId, userId))
@@ -33,6 +39,16 @@ public class NotificationServcie {
 		notification.setUser(userDao.getUserById(userId));
 		notificationDao.addNotificationToDb(notification);
 	}
+	
+	public void updateNotificaion(Notification notification,Integer notificationId) throws DaoException {
+		Notification notificationToUpdate = notificationDao.getNotificationsById(notificationId);
+		notificationToUpdate.setTitle(notification.getTitle());
+		notificationToUpdate.setQuantity(notification.getQuantity());
+		notificationToUpdate.setUnits(notification.getUnits());
+		notificationDao.updateNotificationToDb(notificationToUpdate);
+	}
+	
+	// Queries
 
 	public List<Notification> getAllNotifications() throws DaoException {
 		return notificationDao.getAllNotifications();

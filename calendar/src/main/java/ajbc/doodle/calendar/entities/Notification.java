@@ -38,7 +38,6 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer notificationId;
 
-	
 	@Column(insertable = false, updatable = false)
 	private Integer eventId;
 
@@ -47,7 +46,6 @@ public class Notification {
 	@JoinColumn(name = "eventId")
 	private Event event;
 
-	
 	@Column(insertable = false, updatable = false)
 	private Integer userId;
 

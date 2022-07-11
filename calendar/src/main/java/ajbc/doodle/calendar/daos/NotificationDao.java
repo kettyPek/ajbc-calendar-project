@@ -11,8 +11,17 @@ public interface NotificationDao {
 
 	// CRUD
 
+	public default Notification getNotificationsById(Integer notificationId) throws DaoException {
+		throw new DaoException("Method not implemented");
+	} 
+	
 	@Transactional(readOnly = false)
 	public default void addNotificationToDb(Notification notification) throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
+	
+	@Transactional(readOnly = false)
+	public default void updateNotificationToDb(Notification notification) throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
 
@@ -25,4 +34,6 @@ public interface NotificationDao {
 	public default List<Notification> getNotificationsByUserIdAndEventId(Integer userId, Integer eventId) throws DaoException {
 		throw new DaoException("Method not implemented");
 	} 
+	
+	
 }
