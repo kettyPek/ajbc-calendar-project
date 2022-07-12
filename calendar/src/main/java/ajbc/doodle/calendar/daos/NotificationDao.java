@@ -13,31 +13,48 @@ public interface NotificationDao {
 
 	public default Notification getNotificationsById(Integer notificationId) throws DaoException {
 		throw new DaoException("Method not implemented");
-	} 
-	
+	}
+
 	@Transactional(readOnly = false)
 	public default void addNotificationToDb(Notification notification) throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
-	
+
 	@Transactional(readOnly = false)
 	public default void updateNotificationToDb(Notification notification) throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
+	
+	@Transactional(readOnly = false)
+	public default void deleteNotification(Notification notification) throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
 
 	// Queries
 
-	public default List<Notification> getAllNotifications() throws DaoException {
+	public default List<Notification> getNotificationsByEventId(Integer eventId) throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
 	
-	public default List<Notification> getNotificationsByUserIdAndEventId(Integer userId, Integer eventId) throws DaoException {
+	public default List<Notification> getAllNotifications() throws DaoException {
 		throw new DaoException("Method not implemented");
-	} 
-	
+	}
+
+	public default List<Notification> getNotificationsByUserIdAndEventId(Integer userId, Integer eventId)
+			throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
+
 	public default List<Notification> getAllActiveNotifications() throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
 	
-	
+	public default List<Notification> getAllNotificationsByUserId(Integer userId) throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
+
+	@Transactional(readOnly = false)
+	public default void deleteAll(List<Notification> notifications) throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
 }

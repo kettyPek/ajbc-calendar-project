@@ -89,12 +89,13 @@ public class NotificationManager {
 		User user;
 		Duration duration;
 		while (!notificationsQueue.isEmpty()) {
-			nextNotification = notificationsQueue.peek();
-			duration = Duration.between(LocalDateTime.now(), calculateNotificationTime(nextNotification));
-			System.out.println("next notification: " + calculateNotificationTime(nextNotification));
-			System.out.println("sleep for " + duration.toSeconds());
 			try {
-				Thread.sleep(duration.toSeconds() * 1000);
+				nextNotification = notificationsQueue.peek();
+				duration = Duration.between(LocalDateTime.now(), calculateNotificationTime(nextNotification));
+				System.out.println("next notification: " + calculateNotificationTime(nextNotification));
+				System.out.println("sleep for " + duration.toSeconds());
+				if(duration.getSeconds() > 0)
+					Thread.sleep(duration.toSeconds() * 1000);
 			} catch (InterruptedException e) {
 				System.out.println("interrupted");
 				break;
@@ -111,8 +112,16 @@ public class NotificationManager {
 	}
 
 	public void addNotification(Notification notification) throws DaoException {
-		th.interrupt();
+		if(th.isAlive())
+			th.interrupt();
 		notificationsQueue.add(notification);
+		initiateThread();
+	}
+	
+	public void addNotification(List<Notification> notifications) throws DaoException {
+		if(th.isAlive())
+			th.interrupt();
+		notifications.forEach(n -> notificationsQueue.add(n));
 		initiateThread();
 	}
 

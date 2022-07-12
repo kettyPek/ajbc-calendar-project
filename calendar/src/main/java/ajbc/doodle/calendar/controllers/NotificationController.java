@@ -1,10 +1,9 @@
 package ajbc.doodle.calendar.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.websocket.server.PathParam;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -44,27 +43,53 @@ public class NotificationController {
 	@Autowired
 	private NotificationManager notificationManager;
 
+	@RequestMapping(method = RequestMethod.GET, path = "/id/{id}")
+	public ResponseEntity<?> getNotifications(@PathVariable Integer id) {
+		try {
+			Notification notification = notificationService.getNotificationById(id);
+			return ResponseEntity.status(HttpStatus.OK).body(notification);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> createNotification(@RequestBody Notification notification, @RequestParam int userId,
 			@RequestParam Integer eventId) {
 		try {
-			// TODO check if user logged in
 			notificationService.addNotificationToEventOfUser(userId, eventId, notification);
 			notification = notificationService.getLastLoggedNotification(eventId, eventId);
 			notificationManager.addNotification(notification);
-			return ResponseEntity.status(HttpStatus.CREATED).build();
+			return ResponseEntity.status(HttpStatus.CREATED).body(notification);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
+	public ResponseEntity<?> updateNotification(@RequestBody Notification notification, @PathVariable Integer id) {
+		try {
+			notificationService.updateNotificaion(notification, id);
+			notificationManager.updatedNotification(notification);
+			notification = notificationService.getNotificationById(id);
+			return ResponseEntity.status(HttpStatus.OK).body(notification);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 	
-	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
-	public ResponseEntity<?> updateNotification(@RequestBody Notification notification, @PathVariable Integer id) {
+	@RequestMapping(method = RequestMethod.PUT)
+	public ResponseEntity<?> updateNotificationsFromList(@RequestBody Map<Integer,Notification> notificationsMap) {
 		try {
-			notificationService.updateNotificaion(notification, id);
-			notification = notificationDao.getNotificationsById(id);
-			notificationManager.updatedNotification(notification);
-			return ResponseEntity.status(HttpStatus.OK).build();
+			Notification updated;
+			List<Integer> ids = notificationsMap.keySet().stream().collect(Collectors.toList());
+			for(var id : ids) {
+				notificationService.updateNotificaion(notificationsMap.get(id), id);
+				updated = notificationService.getNotificationById(id);
+				notificationManager.updatedNotification(updated);
+			}
+			List<Notification> updatedNotifications = getNotificationsById(ids);
+			return ResponseEntity.status(HttpStatus.OK).body(updatedNotifications);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
@@ -77,9 +102,43 @@ public class NotificationController {
 			if (map.containsKey("userId") && map.containsKey("eventId"))
 				notifications = notificationService.getAllNotificationsOfUserForEvent(
 						Integer.parseInt(map.get("userId")), Integer.parseInt(map.get("eventId")));
+			if(map.containsKey("eventId"))
+				notifications = notificationService.getNotificationsByEventId(Integer.parseInt(map.get("eventId")));
 			else
 				notifications = notificationService.getAllNotifications();
 			return ResponseEntity.status(HttpStatus.OK).body(notifications);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
+	public ResponseEntity<?> deleteNotification(@PathVariable Integer id , @RequestParam String deleteType) {
+		try {
+			Notification notification = notificationDao.getNotificationsById(id);
+			if(deleteType.equalsIgnoreCase("HARD"))
+				notificationService.hardDeleteNotification(notification);
+			else
+				notificationService.softDeleteNotification(notification);
+			notificationManager.deleteNotification(notification);
+			return ResponseEntity.status(HttpStatus.OK).body(notification);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.DELETE)
+	public ResponseEntity<?> deleteNotificationListOfNotifications(@RequestBody List<Integer> ids, @RequestParam String deleteType) {
+		try {
+			List<Notification> notifications = getNotificationsById(ids);
+			if(deleteType.equalsIgnoreCase("HARD"))
+				notificationService.hardDeleteListOfNotifications(notifications);
+			else
+				for(var notif : notifications)
+					notificationService.softDeleteNotification(notif);
+			for(var notif : notifications)
+				notificationManager.deleteNotification(notif);
+			return ResponseEntity.status(HttpStatus.OK).body(ids);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
@@ -95,12 +154,18 @@ public class NotificationController {
 		return pushProps.getServerKeys().getPublicKeyBase64();
 	}
 
-
 	@Scheduled(initialDelay = 3_000, fixedDelay = 1000_000)
 	public void run() throws DaoException, InterruptedException {
 		notificationManager.setPushProps(pushProps);
 		notificationManager.getNotificatiosFromDb();
 		notificationManager.initiateThread();
+	}
+	
+	private List<Notification> getNotificationsById(List<Integer> ids) throws DaoException{
+		List<Notification> notifications = new ArrayList<Notification>();
+		for(var id : ids) 
+			notifications.add(notificationService.getNotificationById(id));
+		return notifications;
 	}
 
 }

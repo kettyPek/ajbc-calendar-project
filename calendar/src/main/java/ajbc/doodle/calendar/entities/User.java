@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -44,18 +45,22 @@ public class User {
 	private String email;
 
 	private LocalDate birthDate;
+	
+	@JsonProperty(access = Access.READ_ONLY)
 	private LocalDate joinDate;
+	@JsonProperty(access = Access.READ_ONLY)
 	private boolean inactive;
+	@JsonProperty(access = Access.READ_ONLY)
 	private boolean loggedIn;
 
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonIgnore
 	private String endPoint;
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonIgnore
 	private String p256dh;
-	@JsonProperty(access = Access.WRITE_ONLY)
+	@JsonIgnore
 	private String auth;
 
-	@JsonIgnore
+	@JsonProperty(access = Access.READ_ONLY)
 	@ManyToMany(mappedBy = "guests", fetch = FetchType.EAGER)
 	private Set<Event> events = new HashSet<Event>();
 
@@ -68,5 +73,6 @@ public class User {
 		this.inactive = false;
 		this.loggedIn = false;
 	}
+	
 
 }

@@ -60,11 +60,12 @@ public class Event {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer eventId;
 
-	@JsonIgnore
+	@JsonProperty(access = Access.READ_ONLY)
 	@Column(insertable = false, updatable = false)
 	private Integer ownerId;
 
-	@ManyToOne
+	@JsonIgnore
+	@ManyToOne(cascade = CascadeType.REMOVE)
 	@JoinColumn(name = "ownerId")
 	private User owner;
 
@@ -80,9 +81,8 @@ public class Event {
 
 	private boolean inactive;
 
-	@JsonProperty(access = Access.READ_ONLY)
-//	@JsonProperty(access = Access.WRITE_ONLY)
-	@ManyToMany(cascade = { CascadeType.MERGE },fetch = FetchType.EAGER)
+	@JsonIgnore
+	@ManyToMany(cascade = { CascadeType.MERGE},fetch = FetchType.EAGER)
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests = new HashSet<User>();
 	

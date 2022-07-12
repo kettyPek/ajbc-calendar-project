@@ -1,12 +1,21 @@
 package ajbc.doodle.calendar.services;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import ajbc.doodle.calendar.daos.DaoException;
+import ajbc.doodle.calendar.daos.NotificationDao;
 import ajbc.doodle.calendar.daos.UserDao;
+import ajbc.doodle.calendar.entities.Event;
+import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.Subscription;
 
@@ -15,8 +24,12 @@ public class UserService {
 
 	@Autowired
 	private UserDao userDao;
+	
+	@Autowired
+	private NotificationDao notificationDao;
 
 	public void addUser(User user) throws DaoException {
+		user.setJoinDate(LocalDate.now());
 		userDao.addUser(user);
 	}
 	
@@ -25,19 +38,34 @@ public class UserService {
 	}
 
 	public User getUserById(Integer userId) throws DaoException {
-		return userDao.getUserById(userId);
+		User user = userDao.getUserById(userId);
+		user.setEvents(filterdEventsToUsersNotificationsOnly(user));
+		return user;
 	}
-
+	
 	public List<User> getAllUsers() throws DaoException {
-		return userDao.getAllUsers();
+		// TODO not displaying notifications
+		List<User> users = userDao.getAllUsers();
+		for(int i=0; i<users.size(); i++) {
+			users.get(i).setEvents(filterdEventsToUsersNotificationsOnly(users.get(i)));		
+		}
+		return users;
 	}
 
 	public User getUserByEmail(String email) throws DaoException {
-		return userDao.getUserByEmail(email);
+		User user =  userDao.getUserByEmail(email);
+		user.setEvents(filterdEventsToUsersNotificationsOnly(user));
+		return user;
 	}
 
 	public void hardDeleteUser(User user) throws DaoException {
-		userDao.hardDeleteUser(user);	
+//		List<Notification> usersNotifications = notificationDao.getAllNotificationsByUserId(user.getUserId());
+//		notificationDao.deleteAll(usersNotifications);
+//		List<Event> usersEvents = user.getEvents();
+//		for(int i=0; i<usersEvents.size(); i++) {
+//			if(usersEvents.)
+//		}
+//		userDao.hardDeleteUser(user);	
 	}
 
 	public void softDeleteUser(User user) throws DaoException {
@@ -56,5 +84,17 @@ public class UserService {
 		user.setEndPoint(null);
 		user.setLoggedIn(false);
 		userDao.updateUser(user);
-	}	
+	}
+	
+	private Set<Event> filterdEventsToUsersNotificationsOnly(User user){ 
+		Set<Event> events = user.getEvents();
+		Set<Event> eventsFilterd = new HashSet<Event>();
+		Set<Notification> notifications;
+		for(Event event : events ) {
+			notifications = event.getNotifications().stream().filter(n -> n.getUserId() == user.getUserId()).collect(Collectors.toSet());	
+			event.setNotifications(notifications);
+			eventsFilterd.add(event);
+		}
+		return eventsFilterd;
+	}
 }

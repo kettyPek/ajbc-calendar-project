@@ -41,14 +41,22 @@ public class NotificationServcie {
 	}
 	
 	public void updateNotificaion(Notification notification,Integer notificationId) throws DaoException {
-		Notification notificationToUpdate = notificationDao.getNotificationsById(notificationId);
-		notificationToUpdate.setTitle(notification.getTitle());
-		notificationToUpdate.setQuantity(notification.getQuantity());
-		notificationToUpdate.setUnits(notification.getUnits());
-		notificationDao.updateNotificationToDb(notificationToUpdate);
+		Notification oldNotification = notificationDao.getNotificationsById(notificationId);
+		notification.setNotificationId(notificationId);
+		notification.setUser(oldNotification.getUser());
+		notification.setEvent(oldNotification.getEvent());
+		notificationDao.updateNotificationToDb(notification);
+	}
+	
+	public void hardDeleteNotification(Notification notification) throws DaoException {
+		notificationDao.deleteNotification(notification);
 	}
 	
 	// Queries
+	
+	public List<Notification> getNotificationsByEventId(Integer eventId) throws DaoException{
+		return notificationDao.getNotificationsByEventId(eventId);
+	}
 
 	public List<Notification> getAllNotifications() throws DaoException {
 		return notificationDao.getAllNotifications();
@@ -57,6 +65,7 @@ public class NotificationServcie {
 	public List<Notification> getAllNotificationsOfUserForEvent(Integer userId, Integer eventId) throws DaoException {
 		return notificationDao.getNotificationsByUserIdAndEventId(userId, eventId);
 	} 
+	
 	@Transactional
 	public Notification getLastLoggedNotification(Integer userId, Integer eventId) throws DaoException {
 		List<Notification> notifications =  notificationDao.getNotificationsByUserIdAndEventId(userId, eventId);
@@ -66,6 +75,16 @@ public class NotificationServcie {
 	private boolean userIsParticipant(int eventId, int userId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return event.getGuests().stream().map(User::getUserId).anyMatch(id -> id == userId);
+	}
+
+	public void softDeleteNotification(Notification notification) throws DaoException {
+		notification.setInactive(true);
+		notificationDao.updateNotificationToDb(notification);
+		
+	}
+	
+	public void hardDeleteListOfNotifications(List<Notification> notifications) throws DaoException {
+		notificationDao.deleteAll(notifications);
 	}
 
 

@@ -84,7 +84,7 @@ public class UserController {
 	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) throws DaoException {
 		try {
 			User user = userService.getUserById(id);
-			if (deleteType.toUpperCase() == "HARD")
+			if (deleteType.equalsIgnoreCase("HARD"))
 				userService.hardDeleteUser(user);
 			else
 				userService.softDeleteUser(user);
