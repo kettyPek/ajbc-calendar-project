@@ -20,13 +20,14 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import ajbc.doodle.calendar.PushProp;
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.EventDao;
-
+import ajbc.doodle.calendar.daos.NotificationDao;
 import ajbc.doodle.calendar.daos.UserDao;
 import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
@@ -34,17 +35,15 @@ import ajbc.doodle.calendar.entities.User;
 
 import ajbc.doodle.calendar.enums.Units;
 import ajbc.doodle.calendar.notifications_manager.threads.SendNotification;
+import ajbc.doodle.calendar.services.NotificationManagerService;
 import lombok.Setter;
 
 @Setter
 @Component
 public class NotificationManager {
-
+	
 	@Autowired
-	private UserDao userDao;
-
-	@Autowired
-	private EventDao eventDao;
+	private NotificationManagerService managerService;
 
 	private PriorityBlockingQueue<Notification> notificationsQueue = new PriorityBlockingQueue<Notification>(2,
 			new Comparator<Notification>() {
@@ -58,9 +57,13 @@ public class NotificationManager {
 	private ExecutorService executorService;
 	private Thread th;
 
-	public void inntializeNotificationsQueue(List<Notification> notificationsList) {
-		executorService = Executors.newCachedThreadPool();
-		notificationsList = notificationsList.stream().filter(n -> calculateNotificationTime(n).isAfter(LocalDateTime.now())).collect(Collectors.toList());
+	public  NotificationManager(){
+		executorService = Executors.newCachedThreadPool();	
+	}
+	
+	public void getNotificatiosFromDb() throws DaoException {
+		List<Notification> notificationsList = managerService.getActiveNotifications();
+		notificationsList.forEach(n -> System.out.println(n.getNotificationId()));
 		for (int i = 0; i < notificationsList.size(); i++)
 			notificationsQueue.add(notificationsList.get(i));
 	}
@@ -89,6 +92,7 @@ public class NotificationManager {
 			nextNotification = notificationsQueue.peek();
 			duration = Duration.between(LocalDateTime.now(), calculateNotificationTime(nextNotification));
 			System.out.println("next notification: " + calculateNotificationTime(nextNotification));
+			System.out.println("sleep for " + duration.toSeconds());
 			try {
 				Thread.sleep(duration.toSeconds() * 1000);
 			} catch (InterruptedException e) {
@@ -96,11 +100,12 @@ public class NotificationManager {
 				break;
 			}
 			currntNotification = notificationsQueue.poll();
-			user = userDao.getUserById(currntNotification.getUserId());
+			user = managerService.getUserOfNotification(nextNotification);
 			if (user.isLoggedIn())
 				executorService.execute(new SendNotification(user, currntNotification, pushProps));
 			else
-				System.out.println("not executed");
+				System.out.println("user is not logged in");
+			managerService.InactivateNotification(currntNotification);
 		}
 		System.out.println("no notifications");
 	}
@@ -139,7 +144,7 @@ public class NotificationManager {
 	public LocalDateTime calculateNotificationTime(Notification notification)  {
 		Event event;
 		try {
-			event = eventDao.getEventById(notification.getEventId());
+			event = managerService.getEvenOfNotification(notification);
 			LocalDateTime date;
 			if (notification.getUnits() == Units.HOURS)
 				date = event.getStartDateTime().minusHours(notification.getQuantity());

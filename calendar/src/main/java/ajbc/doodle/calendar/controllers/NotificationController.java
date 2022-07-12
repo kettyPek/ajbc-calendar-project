@@ -95,15 +95,11 @@ public class NotificationController {
 		return pushProps.getServerKeys().getPublicKeyBase64();
 	}
 
-	@PostConstruct
-	public void update() throws DaoException {
-		notificationManager.setPushProps(pushProps);
-		List<Notification> notifications = notificationDao.getAllNotifications();
-		notificationManager.inntializeNotificationsQueue(notifications);
-	}
 
 	@Scheduled(initialDelay = 3_000, fixedDelay = 1000_000)
 	public void run() throws DaoException, InterruptedException {
+		notificationManager.setPushProps(pushProps);
+		notificationManager.getNotificatiosFromDb();
 		notificationManager.initiateThread();
 	}
 

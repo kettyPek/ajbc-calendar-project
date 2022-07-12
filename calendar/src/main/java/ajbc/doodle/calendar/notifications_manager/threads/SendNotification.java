@@ -43,6 +43,7 @@ public class SendNotification implements Runnable {
 
 	@Override
 	public void run() {
+		System.out.println("in run thread");
 		Object message = new PushMessage("message: ", notification.getTitle());
 		byte[] result;
 		try {

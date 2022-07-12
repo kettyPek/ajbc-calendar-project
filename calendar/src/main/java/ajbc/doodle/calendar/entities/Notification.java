@@ -4,7 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -12,12 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.hibernate.FetchMode;
-import org.hibernate.annotations.Fetch;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import ajbc.doodle.calendar.enums.Units;
 import lombok.Getter;
@@ -60,6 +55,7 @@ public class Notification {
 	private Units units;
 
 	private Integer quantity;
+	private boolean inactive;
 
 	public Notification(Event event, User user, String title, Units units, Integer qiantity) {
 		this.event = event;

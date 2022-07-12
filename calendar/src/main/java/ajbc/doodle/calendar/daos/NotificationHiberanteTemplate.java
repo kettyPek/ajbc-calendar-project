@@ -59,6 +59,15 @@ public class NotificationHiberanteTemplate implements NotificationDao {
 		return (List<Notification>)template.findByCriteria(criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY));
 		
 	}
+
+	@Override
+	public List<Notification> getAllActiveNotifications() throws DaoException {
+		DetachedCriteria criteria = DetachedCriteria.forClass(Notification.class);
+		criteria.add(Restrictions.eq("inactive", false));
+		return (List<Notification>)template.findByCriteria(criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY));
+	}
+	
+	
 	
 	
 
