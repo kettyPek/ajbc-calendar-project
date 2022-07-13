@@ -49,12 +49,9 @@ public class DatabaseSeeder {
 	private void seedUsersTable() throws DaoException {
 		List<User> users = userDao.getAllUsers();
 		if (users == null || users.size() == 0) {
-			userDao.addUser(new User("ketty", "pekarsky", "ketty@gmail.com", LocalDate.of(1996, 05, 02),
-					LocalDate.now()));
-			userDao.addUser(
-					new User("dani", "kravtsov", "dani@gmail.com", LocalDate.of(1994, 04, 06), LocalDate.now()));
-			userDao.addUser(new User("nikol", "pekarsky", "nikol@gmail.com", LocalDate.of(2004, 04, 15),
-					LocalDate.now()));
+			userDao.addUser(new User("ketty", "pekarsky", "ketty@gmail.com", LocalDate.of(1996, 05, 02)));
+			userDao.addUser(new User("dani", "kravtsov", "dani@gmail.com", LocalDate.of(1994, 04, 06)));
+			userDao.addUser(new User("nikol", "pekarsky", "nikol@gmail.com", LocalDate.of(2004, 04, 15)));
 		}
 	}
 
@@ -70,11 +67,11 @@ public class DatabaseSeeder {
 			guests2.add(owner2);
 			guests2.add(userDao.getUserById(1));
 			guests2.add(userDao.getUserById(3));
-			
-			eventDao.addEvent(new Event(owner1, "Exam", false, EVENT_DATE_TIME,
-					EVENT_DATE_TIME_END, "Technion", "Java", NONE_REP, false, guests1));
-			eventDao.addEvent(new Event(owner2, "Party", false, EVENT_DATE_TIME,
-					EVENT_DATE_TIME_END, "Home", "Birthday", NONE_REP, false, guests2));
+
+			eventDao.addEvent(new Event(owner1, "Exam", false, EVENT_DATE_TIME, EVENT_DATE_TIME_END, "Technion", "Java",
+					NONE_REP, false, guests1));
+			eventDao.addEvent(new Event(owner2, "Party", false, EVENT_DATE_TIME, EVENT_DATE_TIME_END, "Home",
+					"Birthday", NONE_REP, false, guests2));
 		}
 	}
 
@@ -87,12 +84,17 @@ public class DatabaseSeeder {
 
 			Event event1 = eventDao.getEventById(1);
 			Event event2 = eventDao.getEventById(2);
-			
-			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE));
-			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE+1));
-			notificationDao.addNotificationToDb(new Notification(event2, user3, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE+2));
-			notificationDao.addNotificationToDb(new Notification(event2, user2, "Buy gift", REMINDER_UNITS, NOTIFY_BEFORE+2));
-			notificationDao.addNotificationToDb(new Notification(event2, user1, "Congrat", REMINDER_UNITS, NOTIFY_BEFORE+3));
+
+			notificationDao
+					.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE));
+			notificationDao
+					.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE + 1));
+			notificationDao.addNotificationToDb(
+					new Notification(event2, user3, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE + 2));
+			notificationDao.addNotificationToDb(
+					new Notification(event2, user2, "Buy gift", REMINDER_UNITS, NOTIFY_BEFORE + 2));
+			notificationDao
+					.addNotificationToDb(new Notification(event2, user1, "Congrat", REMINDER_UNITS, NOTIFY_BEFORE + 3));
 		}
 	}
 

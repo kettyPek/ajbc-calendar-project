@@ -64,12 +64,12 @@ public class User {
 	@ManyToMany(mappedBy = "guests", fetch = FetchType.EAGER)
 	private Set<Event> events = new HashSet<Event>();
 
-	public User(String fristName, String lastName, String email, LocalDate birthDate, LocalDate joinDate) {
+	public User(String fristName, String lastName, String email, LocalDate birthDate) {
 		this.firstName = fristName;
 		this.lastName = lastName;
 		this.email = email;
 		this.birthDate = birthDate;
-		this.joinDate = joinDate;
+		this.joinDate = LocalDate.now();
 		this.inactive = false;
 		this.loggedIn = false;
 	}
