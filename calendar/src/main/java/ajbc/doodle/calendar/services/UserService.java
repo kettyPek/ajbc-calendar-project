@@ -47,7 +47,6 @@ public class UserService {
 	}
 
 	public List<User> getAllUsers() throws DaoException {
-		// TODO not displaying notifications
 		List<User> users = userDao.getAllUsers();
 		for (int i = 0; i < users.size(); i++) {
 			users.get(i).setEvents(filterdEventsToUsersNotificationsOnly(users.get(i)));

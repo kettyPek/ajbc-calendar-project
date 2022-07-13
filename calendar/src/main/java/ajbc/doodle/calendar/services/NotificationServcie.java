@@ -1,5 +1,6 @@
 package ajbc.doodle.calendar.services;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import ajbc.doodle.calendar.daos.UserDao;
 import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
+import ajbc.doodle.calendar.enums.Units;
 
 @Component()
 public class NotificationServcie {
@@ -32,9 +34,12 @@ public class NotificationServcie {
 		return notificationDao.getNotificationsById(notificationId);
 	}
 
+	
 	public void addNotificationToEventOfUser(Notification notification) throws DaoException {
-		notification.setEvent(eventDao.getEventById(notification.getEventId()));
+		Event event = eventDao.getEventById(notification.getEventId());
+		notification.setEvent(event);
 		notification.setUser(userDao.getUserById(notification.getUserId()));
+		notification.setAlertDateTime(calculateAlertDateTime(event,notification));
 		notificationDao.addNotificationToDb(notification);
 	}
 	
@@ -43,6 +48,7 @@ public class NotificationServcie {
 		notification.setNotificationId(notificationId);
 		notification.setUser(oldNotification.getUser());
 		notification.setEvent(oldNotification.getEvent());
+		notification.setAlertDateTime(calculateAlertDateTime(oldNotification.getEvent(),notification));
 		notificationDao.updateNotificationToDb(notification);
 	}
 	
@@ -106,6 +112,18 @@ public class NotificationServcie {
 		}catch (DaoException e) {
 			return false;
 		}
+	}
+	
+	private LocalDateTime calculateAlertDateTime(Event event, Notification notification) {
+		if(notification.getUnits().equals(Units.HOURS))
+			return event.getStartDateTime().minusHours(notification.getQuantity());
+		else
+			return event.getStartDateTime().minusMinutes(notification.getQuantity());
+	}
+	
+	public void addNotification(Notification notification) throws DaoException {
+		notification.setAlertDateTime(calculateAlertDateTime(notification.getEvent(),notification));
+		notificationDao.addNotificationToDb(notification);
 	}
 
 

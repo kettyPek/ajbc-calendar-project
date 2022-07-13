@@ -20,11 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ajbc.doodle.calendar.PushProp;
 import ajbc.doodle.calendar.daos.DaoException;
 
-import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 
-import ajbc.doodle.calendar.enums.Units;
 import ajbc.doodle.calendar.notifications_manager.threads.SendNotification;
 import ajbc.doodle.calendar.services.NotificationManagerService;
 
@@ -43,11 +41,11 @@ public class NotificationManager {
 	private ExecutorService threadPool;
 	private Thread th;
 
-	private PriorityBlockingQueue<Notification> notificationsQueue = new PriorityBlockingQueue<Notification>(
+	protected PriorityBlockingQueue<Notification> notificationsQueue = new PriorityBlockingQueue<Notification>(
 			INITIAL_CAPACITY, new Comparator<Notification>() {
 				@Override
 				public int compare(Notification n1, Notification n2) {
-					return calculateNotificationTime(n1).isBefore(calculateNotificationTime(n2)) ? -1 : 1;
+					return n1.getAlertDateTime().isBefore(n2.getAlertDateTime()) ? -1 : 1;
 				}
 			});
 
@@ -83,8 +81,8 @@ public class NotificationManager {
 				nextNotification = notificationsQueue.peek();
 
 				// Calculate delay for next notification
-				duration = Duration.between(LocalDateTime.now(), calculateNotificationTime(nextNotification));
-				System.out.println("next notification: " + calculateNotificationTime(nextNotification));
+				duration = Duration.between(LocalDateTime.now(), nextNotification.getAlertDateTime());
+				System.out.println("next notification: " + nextNotification.getAlertDateTime());
 				System.out.println("sleep for " + duration.toSeconds());
 
 				// sleep only if delay is positive
@@ -94,11 +92,11 @@ public class NotificationManager {
 				System.out.println("interrupted");
 				break;
 			}
-			
+
 			// insert all notifications with same time and date to the list
 			notificationsToSendNow = new ArrayList<Notification>();
 			while (!notificationsQueue.isEmpty() && Duration
-					.between(LocalDateTime.now(), calculateNotificationTime(notificationsQueue.peek())).toSeconds() <= 0
+					.between(LocalDateTime.now(), notificationsQueue.peek().getAlertDateTime()).toSeconds() <= 0
 					&& !notificationsQueue.isEmpty()) {
 				notificationsToSendNow.add(notificationsQueue.poll());
 			}
@@ -184,23 +182,6 @@ public class NotificationManager {
 				break;
 			}
 		}
-	}
-
-	// Calculates notification start time and date
-	public LocalDateTime calculateNotificationTime(Notification notification) {
-		Event event;
-		try {
-			event = managerService.getEvenOfNotification(notification);
-			LocalDateTime date;
-			if (notification.getUnits() == Units.HOURS)
-				date = event.getStartDateTime().minusHours(notification.getQuantity());
-			else
-				date = event.getStartDateTime().minusMinutes(notification.getQuantity());
-			return date;
-		} catch (DaoException e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 }

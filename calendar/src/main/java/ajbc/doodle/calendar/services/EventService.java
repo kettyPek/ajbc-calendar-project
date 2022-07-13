@@ -17,6 +17,7 @@ import ajbc.doodle.calendar.daos.UserDao;
 import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
+import ajbc.doodle.calendar.enums.Units;
 
 @Component()
 public class EventService {
@@ -29,6 +30,10 @@ public class EventService {
 	
 	@Autowired
 	private NotificationDao notificationDao;
+	
+	@Autowired
+	private NotificationServcie notificationService;
+	
 
 	// CRUD
 
@@ -38,6 +43,7 @@ public class EventService {
 		participants.add(event.getOwner());
 		event.setGuests(participants);
 		eventDao.addEvent(event);
+
 	}
 
 	public void updateEvent(Event event, int ownerId) throws DaoException {
@@ -135,5 +141,18 @@ public class EventService {
 	public List<Notification> getNotificationsOfEvent(Integer eventId) throws DaoException {
 		return notificationDao.getNotificationsByEventId(eventId);
 	}
-
+	
+	public List<Notification> updatedNotificatiosOfEvent(Event event) throws DaoException{
+		List<Notification> notifications = getNotificationsOfEvent(event.getEventId());
+		for(var notif : notifications)
+			notificationDao.updateNotificationToDb(notif);
+		return notificationDao.getNotificationsByEventId(event.getEventId());
+	}
+	
+	public Notification addDefaultNotificationFOrEvent(Event event) throws DaoException {
+		Notification defaultNotification = new Notification(event,event.getOwner(),event.getTitle(),Units.MINUTES,0);
+		notificationService.addNotification(defaultNotification);
+		return notificationDao.getLastAdded();
+	}
+	
 }

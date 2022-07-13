@@ -22,6 +22,7 @@ import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.EventService;
+import ajbc.doodle.calendar.services.NotificationServcie;
 
 /**
  * Handles Event API requests
@@ -52,6 +53,8 @@ public class EventController {
 				throw new DaoException("User " + event.getOwnerId() + " does not exist in DB");
 			eventService.addEvent(event);
 			event = eventService.getEventbyId(event.getEventId());
+			Notification defaultNotification = eventService.addDefaultNotificationFOrEvent(event);
+			notificationManager.addNotification(defaultNotification);
 			return ResponseEntity.status(HttpStatus.CREATED).body(event);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
@@ -67,19 +70,28 @@ public class EventController {
 	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/list")
 	public ResponseEntity<?> createEventsFromList(@RequestBody List<Event> events) {
-		List<String> uncratedEvents = new ArrayList<String>();
-		for (int i = 0; i < events.size(); i++) {
-			try {
-				if (!eventService.isUserExists(events.get(i).getOwnerId()))
-					throw new DaoException("User " + events.get(i).getOwnerId() + " does not exist in DB");
-				eventService.addEvent(events.get(i));
-			} catch (DaoException e) {
-				uncratedEvents.add("event " + i + " in the list wasnt created: " + e.getMessage());
+		try {
+			Event event;
+			List<String> uncratedEvents = new ArrayList<String>();
+			List<Notification> defaultNotifications = new ArrayList<Notification>();
+			for (int i = 0; i < events.size(); i++) {
+				try {
+					if (!eventService.isUserExists(events.get(i).getOwnerId()))
+						throw new DaoException("User " + events.get(i).getOwnerId() + " does not exist in DB");
+					eventService.addEvent(events.get(i));
+					event = eventService.getEventbyId(events.get(i).getEventId());
+					defaultNotifications.add(eventService.addDefaultNotificationFOrEvent(event));
+				} catch (DaoException e) {
+					uncratedEvents.add("event " + i + " in the list wasnt created: " + e.getMessage());
+				}
 			}
+			notificationManager.addNotificationsFromList(defaultNotifications);
+			if (!uncratedEvents.isEmpty())
+				return ResponseEntity.status(HttpStatus.valueOf(500)).body(uncratedEvents);
+			return ResponseEntity.status(HttpStatus.OK).build();
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
-		if (!uncratedEvents.isEmpty())
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(uncratedEvents);
-		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 
 	/**
@@ -109,16 +121,18 @@ public class EventController {
 
 	/**
 	 * Get all events of user by parameters
-	 * @param id - user's id
-	 * @param paramsMap - map of parameters , key - parameter name, value - parameter value
-	 * startDateTime and endDateTime : events between given dates.
-	 * minutes and hours : events which take place given hours and minutes before current time
-	 * no parameters : all events in if user.
+	 * 
+	 * @param id        - user's id
+	 * @param paramsMap - map of parameters , key - parameter name, value -
+	 *                  parameter value startDateTime and endDateTime : events
+	 *                  between given dates. minutes and hours : events which take
+	 *                  place given hours and minutes before current time no
+	 *                  parameters : all events in if user.
 	 * @return - list of events
 	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/user/{id}")
 	public ResponseEntity<?> getAllEventsOfUserById(@PathVariable Integer id,
-			@RequestParam Map<String, String> paramsMap){
+			@RequestParam Map<String, String> paramsMap) {
 		List<Event> events;
 		try {
 			if (!eventService.isUserExists(id))
@@ -140,11 +154,12 @@ public class EventController {
 
 	/**
 	 * Get upcoming events of user
+	 * 
 	 * @param id - user's id
 	 * @return list of events
 	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/user/{id}/upcoming")
-	public ResponseEntity<?> getUpcomingEventsOfUser(@PathVariable Integer id){
+	public ResponseEntity<?> getUpcomingEventsOfUser(@PathVariable Integer id) {
 		try {
 			if (!eventService.isUserExists(id))
 				throw new DaoException("User " + id + " does not exist in DB");
@@ -158,10 +173,12 @@ public class EventController {
 
 	/**
 	 * Update event
-	 * @param event  - event with updated data
+	 * 
+	 * @param event   - event with updated data
 	 * @param eventId - event's id
 	 * @param ownerId - owner's id
-	 * @return updated event if action succeeded, otherwise returns exception details
+	 * @return updated event if action succeeded, otherwise returns exception
+	 *         details
 	 */
 	@RequestMapping(method = RequestMethod.PUT, path = "/{eventId}/owner/{ownerId}")
 	public ResponseEntity<?> updateEvent(@RequestBody Event event, @PathVariable Integer eventId,
@@ -169,13 +186,13 @@ public class EventController {
 		try {
 			if (!eventService.userIsOwner(eventId, ownerId))
 				throw new DaoException("Only the owner can update the event");
+
 			Event oldEvent = eventService.getEventbyId(eventId);
 			event.setEventId(eventId);
 			eventService.updateEvent(event, ownerId);
 			event = eventService.getEventbyId(eventId);
 			if (!oldEvent.getStartDateTime().isEqual(event.getStartDateTime())) {
-				List<Notification> notifications = eventService.getNotificationsOfEvent(eventId);
-				notificationManager.updatedNotificationsFromList(notifications);
+				notificationManager.updatedNotificationsFromList(eventService.updatedNotificatiosOfEvent(event));
 			}
 			return ResponseEntity.status(HttpStatus.OK).body(event);
 		} catch (DaoException e) {
@@ -185,29 +202,44 @@ public class EventController {
 
 	/**
 	 * Update events from list of events
+	 * 
 	 * @param eventsMap - map of parameters , key - event's id, value - event
-	 * @return list of updated events if action succeeded, otherwise returns unsuccessful updates and exception details
+	 * @return list of updated events if action succeeded, otherwise returns
+	 *         unsuccessful updates and exception details
 	 */
 	@RequestMapping(method = RequestMethod.PUT, path = "/list")
 	public ResponseEntity<?> updateEventsFromList(@RequestBody Map<Integer, Event> eventsMap) {
+		Event oldEvent;
 		List<String> uncupdatedEvents = new ArrayList<String>();
 		List<Integer> ids = eventsMap.keySet().stream().collect(Collectors.toList());
+		List<Notification> notifications = new ArrayList<Notification>();
 		for (var id : ids) {
 			try {
+				oldEvent = eventService.getEventbyId(id);
 				eventsMap.get(id).setEventId(id);
 				eventService.updateEvent(eventsMap.get(id), eventsMap.get(id).getOwnerId());
+				if (!oldEvent.getStartDateTime().isEqual(eventsMap.get(id).getStartDateTime())) {
+					notifications.addAll(eventService.updatedNotificatiosOfEvent(eventsMap.get(id)));
+				}
 			} catch (DaoException e) {
 				uncupdatedEvents.add("event with id " + id + " wasnt updated: " + e.getMessage());
 			}
 		}
-		if (!uncupdatedEvents.isEmpty())
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(uncupdatedEvents);
-		return ResponseEntity.status(HttpStatus.OK).build();
+		try {
+			notificationManager.updatedNotificationsFromList(notifications);
+			if (!uncupdatedEvents.isEmpty())
+				return ResponseEntity.status(HttpStatus.valueOf(500)).body(uncupdatedEvents);
+			return ResponseEntity.status(HttpStatus.OK).build();
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+
 	}
 
 	/**
 	 * Delete event
-	 * @param id - event's id
+	 * 
+	 * @param id         - event's id
 	 * @param deleteType - SOFT: deactivate event. HARD: hard delete from database
 	 * @return delete event if action succeeded, otherwise returns exception details
 	 */
@@ -231,26 +263,30 @@ public class EventController {
 	}
 
 	/**
-	 * Delete list of events 
-	 * @param ids - id's of events to be deleted
+	 * Delete list of events
+	 * 
+	 * @param ids        - id's of events to be deleted
 	 * @param deleteType - SOFT: deactivate event. HARD: hard delete from database
-	 * @return delete events if action succeeded, otherwise returns exception details
+	 * @return delete events if action succeeded, otherwise returns exception
+	 *         details
 	 */
 	@RequestMapping(method = RequestMethod.DELETE, path = "/list")
 	public ResponseEntity<?> deleteEventsFromList(@RequestBody List<Integer> ids, @RequestParam String deleteType) {
-		// TODO what to do with the notifications
 		List<String> notDeleted = new ArrayList<String>();
 		List<Event> events = new ArrayList<Event>();
+		List<Notification> notifications = new ArrayList<Notification>();
 		Event event;
 		for (var id : ids) {
 			try {
 				event = eventService.getEventbyId(id);
 				events.add(event);
+				notifications.addAll(eventService.getNotificationsOfEvent(id));
 			} catch (DaoException e) {
 				notDeleted.add("event with id " + id + " wasnt deleted: " + e.getMessage());
 			}
 		}
 		try {
+			notificationManager.deleteNotifications(notifications);
 			if (deleteType.equalsIgnoreCase("HARD"))
 				for (var e : events)
 					eventService.hardDeleteEvenet(e);

@@ -1,5 +1,7 @@
 package ajbc.doodle.calendar.entities;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -13,6 +15,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import ajbc.doodle.calendar.enums.Units;
 import lombok.Getter;
@@ -53,6 +57,9 @@ public class Notification {
 
 	@Enumerated(EnumType.STRING)
 	private Units units;
+
+	@JsonProperty(access = Access.READ_ONLY)
+	private LocalDateTime alertDateTime;
 
 	private Integer quantity;
 	private boolean inactive;
