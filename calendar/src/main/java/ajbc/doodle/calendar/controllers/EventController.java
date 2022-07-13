@@ -22,7 +22,11 @@ import ajbc.doodle.calendar.entities.Event;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.EventService;
-
+/**
+ * Handles Event API requests
+ * @author ketty
+ *
+ */
 @RequestMapping("/event")
 @RestController
 public class EventController {
@@ -33,6 +37,11 @@ public class EventController {
 	@Autowired
 	private NotificationManager notificationManager;
 
+	/**
+	 * 
+	 * @param event
+	 * @return
+	 */
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> createEvent(@RequestBody Event event) {
 		try {
@@ -152,12 +161,15 @@ public class EventController {
 	public ResponseEntity<?> deleteEvent(@PathVariable Integer id, @RequestParam String deleteType) {
 		try {
 			Event event = eventService.getEventbyId(id);
+			
+			//  delete notifications in NotificationManager
 			List<Notification> notifications = eventService.getNotificationsOfEvent(id);
+			notificationManager.deleteNotifications(notifications);
+			
 			if (deleteType.equalsIgnoreCase("HARD"))
 				eventService.hardDeleteEvenet(event);
 			else
 				eventService.softDeleteEvenet(event);
-			notificationManager.deleteNotifications(notifications);
 			return ResponseEntity.status(HttpStatus.OK).body(event);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());

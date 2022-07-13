@@ -25,6 +25,11 @@ import ajbc.doodle.calendar.entities.webpush.SubscriptionEndpoint;
 import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.UserService;
 
+/**
+ * Handle User's API requests
+ * @author ketty
+ *
+ */
 @RequestMapping("/users")
 @RestController
 public class UserController {
@@ -35,8 +40,17 @@ public class UserController {
 	@Autowired
 	private NotificationManager notificationManager;
 
+	/**
+	 * Returns users from database by certain parameters
+	 * 
+	 * @param params map of parameters , key - parameter name, value - parameter
+	 *               value
+	 * @return list of users. eventId : users of event by eventId. startDateTime and
+	 *         endDateTime : users with event between given dates. no parameters :
+	 *         all users in database.
+	 */
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<?> getAllUsers(@RequestParam Map<String, String> params) throws DaoException {
+	public ResponseEntity<?> getAllUsers(@RequestParam Map<String, String> params) {
 		try {
 			List<User> users;
 			if (params.containsKey("eventId"))
@@ -52,6 +66,12 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Creates a user and inserts it to database
+	 * 
+	 * @param user - user to create
+	 * @return created user
+	 */
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> createUser(@RequestBody User user) {
 		try {
@@ -63,6 +83,13 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Updates user in database
+	 * 
+	 * @param user - user to update
+	 * @param id   - user`s id
+	 * @return updated user if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
 	public ResponseEntity<?> updateUser(@RequestBody User user, @PathVariable Integer id) {
 		try {
@@ -75,8 +102,14 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Get user from database by user's id
+	 * 
+	 * @param id - user's id
+	 * @return - user if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/id/{id}")
-	public ResponseEntity<?> getUserById(@PathVariable Integer id) throws DaoException {
+	public ResponseEntity<?> getUserById(@PathVariable Integer id) {
 		try {
 			User user = userService.getUserById(id);
 			return ResponseEntity.ok(user);
@@ -86,8 +119,14 @@ public class UserController {
 
 	}
 
+	/**
+	 * Get user from database by user's email
+	 * 
+	 * @param email - user's email
+	 * @return - user if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/email/{email}")
-	public ResponseEntity<?> getUserByEmail(@PathVariable String email) throws DaoException {
+	public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
 		try {
 			User user = userService.getUserByEmail(email);
 			return ResponseEntity.ok(user);
@@ -96,25 +135,41 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Delete user from database by user's id
+	 * 
+	 * @param id         - user's id
+	 * @param deleteType - SOFT: deactivate user. HARD: hard delete from database
+	 * @return delete user if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
-	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) throws DaoException {
+	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) {
 		try {
 			User user = userService.getUserById(id);
+
+			// delete all user`s notifications in NotificationManager
 			List<Notification> notifications = userService.getAllnotificationsOfUser(id);
+			notificationManager.deleteNotifications(notifications);
+
 			if (deleteType.equalsIgnoreCase("HARD"))
 				userService.hardDeleteUser(user);
 			else
 				userService.softDeleteUser(user);
-			notificationManager.deleteNotifications(notifications);
 			return ResponseEntity.ok(user);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 	}
 
+	/**
+	 * Log in user 
+	 * @param subscription  - user's subscription
+	 * @param email - user's email
+	 * @return response massage if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/login/{email}")
-	public ResponseEntity<?> logIn(@RequestBody Subscription subscription, @PathVariable(required = false) String email)
-			throws DaoException {
+	public ResponseEntity<?> logIn(@RequestBody Subscription subscription,
+			@PathVariable(required = false) String email) {
 		try {
 			User user = userService.getUserByEmail(email);
 			userService.logInUser(subscription, user);
@@ -124,8 +179,13 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Log out user 
+	 * @param email - user's email
+	 * @return response massage if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/logout/{email}")
-	public ResponseEntity<?> logOut(@PathVariable(required = false) String email) throws DaoException {
+	public ResponseEntity<?> logOut(@PathVariable(required = false) String email) {
 		try {
 			User user = userService.getUserByEmail(email);
 			userService.logOutUser(user);
@@ -135,6 +195,12 @@ public class UserController {
 		}
 	}
 
+	/**
+	 * Check if user subscribed
+	 * @param subscription - user's subscription
+	 * @return - true if user subscribed, otherwise returns false;
+	 * @throws DaoException
+	 */
 	@PostMapping("/isSubscribed")
 	public boolean isSubscribed(@RequestBody SubscriptionEndpoint subscription) throws DaoException {
 		List<User> users = userService.getAllUsers();
