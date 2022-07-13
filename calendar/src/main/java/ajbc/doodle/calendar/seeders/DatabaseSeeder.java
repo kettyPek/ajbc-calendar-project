@@ -59,18 +59,18 @@ public class DatabaseSeeder {
 	}
 
 	private void seedEventTable() throws DaoException {
-		User owner1 = userDao.getUserById(1);
-		User owner2 = userDao.getUserById(2);
-		Set<User> guests1 = new HashSet<User>();
-		guests1.add(owner1);
-		guests1.add(userDao.getUserById(3));
-		Set<User> guests2 = new HashSet<User>();
-		guests2.add(owner2);
-		guests2.add(userDao.getUserById(1));
-		guests2.add(userDao.getUserById(3));
-
 		List<Event> events = eventDao.getAllEvents();
 		if (events == null || events.size() == 0) {
+			User owner1 = userDao.getUserById(1);
+			User owner2 = userDao.getUserById(2);
+			Set<User> guests1 = new HashSet<User>();
+			guests1.add(owner1);
+			guests1.add(userDao.getUserById(3));
+			Set<User> guests2 = new HashSet<User>();
+			guests2.add(owner2);
+			guests2.add(userDao.getUserById(1));
+			guests2.add(userDao.getUserById(3));
+			
 			eventDao.addEvent(new Event(owner1, "Exam", false, EVENT_DATE_TIME,
 					EVENT_DATE_TIME_END, "Technion", "Java", NONE_REP, false, guests1));
 			eventDao.addEvent(new Event(owner2, "Party", false, EVENT_DATE_TIME,

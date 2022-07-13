@@ -93,4 +93,15 @@ public class NotificationHiberanteTemplate implements NotificationDao {
 		template.deleteAll(notifications);
 	}
 
+	@Override
+	public Notification getLastAdded() throws DaoException {
+		DetachedCriteria criteria = DetachedCriteria.forClass(Notification.class);
+		criteria.add(Restrictions.sqlRestriction("notificationId = (select max(notificationId) from Notifications)"));
+		List<Notification> notifications =  (List<Notification>) template
+				.findByCriteria(criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY));
+		return notifications.get(0);
+	}
+	
+	
+
 }

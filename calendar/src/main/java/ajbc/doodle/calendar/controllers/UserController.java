@@ -1,7 +1,7 @@
 package ajbc.doodle.calendar.controllers;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ajbc.doodle.calendar.daos.DaoException;
-import ajbc.doodle.calendar.entities.ErrorMessage;
+
+import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.Subscription;
 import ajbc.doodle.calendar.entities.webpush.SubscriptionEndpoint;
+import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.UserService;
 
 @RequestMapping("/users")
@@ -30,20 +32,23 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
+	@Autowired
+	private NotificationManager notificationManager;
+
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<?> getAllUsers(@RequestParam Map<String,String> params) throws DaoException {
+	public ResponseEntity<?> getAllUsers(@RequestParam Map<String, String> params) throws DaoException {
 		try {
 			List<User> users;
-			if(params.containsKey("eventId"))
+			if (params.containsKey("eventId"))
 				users = userService.getAllUsersInEvent(Integer.parseInt(params.get("eventId")));
-			else if(params.containsKey("startDateTime") && params.containsKey("endDateTime"))
-					users = userService.getAllUsersWithEventBetween(LocalDateTime.parse(params.get("startDateTime")),
-					LocalDateTime.parse(params.get("endDateTime")));
+			else if (params.containsKey("startDateTime") && params.containsKey("endDateTime"))
+				users = userService.getAllUsersWithEventBetween(LocalDateTime.parse(params.get("startDateTime")),
+						LocalDateTime.parse(params.get("endDateTime")));
 			else
 				users = userService.getAllUsers();
 			return ResponseEntity.status(HttpStatus.OK).body(users);
-		}catch(DaoException e){
-			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage()); 
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 
@@ -95,11 +100,12 @@ public class UserController {
 	public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam String deleteType) throws DaoException {
 		try {
 			User user = userService.getUserById(id);
+			List<Notification> notifications = userService.getAllnotificationsOfUser(id);
 			if (deleteType.equalsIgnoreCase("HARD"))
 				userService.hardDeleteUser(user);
 			else
 				userService.softDeleteUser(user);
-			System.out.println(deleteType);
+			notificationManager.deleteNotifications(notifications);
 			return ResponseEntity.ok(user);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

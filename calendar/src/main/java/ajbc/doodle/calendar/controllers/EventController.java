@@ -19,7 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ajbc.doodle.calendar.daos.DaoException;
 
 import ajbc.doodle.calendar.entities.Event;
-
+import ajbc.doodle.calendar.entities.Notification;
+import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.EventService;
 
 @RequestMapping("/event")
@@ -28,6 +29,9 @@ public class EventController {
 
 	@Autowired
 	private EventService eventService;
+
+	@Autowired
+	private NotificationManager notificationManager;
 
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> createEvent(@RequestBody Event event) {
@@ -109,13 +113,17 @@ public class EventController {
 	public ResponseEntity<?> updateEvent(@RequestBody Event event, @PathVariable Integer eventId,
 			@PathVariable Integer ownerId) {
 		try {
-			// TODO what to do with the notifications
 			// TODO check event exist
 			if (!eventService.userIsOwner(eventId, ownerId))
 				throw new DaoException("Only the owner can update the event");
+			Event oldEvent = eventService.getEventbyId(eventId);
 			event.setEventId(eventId);
 			eventService.updateEvent(event, ownerId);
 			event = eventService.getEventbyId(eventId);
+			if (!oldEvent.getStartDateTime().isEqual(event.getStartDateTime())) {
+				List<Notification> notifications = eventService.getNotificationsOfEvent(eventId);
+				notificationManager.updatedNotificationsFromList(notifications);
+			}
 			return ResponseEntity.status(HttpStatus.OK).body(event);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
@@ -124,6 +132,7 @@ public class EventController {
 
 	@RequestMapping(method = RequestMethod.PUT, path = "/list")
 	public ResponseEntity<?> updateEventsFromList(@RequestBody Map<Integer, Event> eventsMap) {
+		// TODO what to do with the notifications
 		List<String> uncupdatedEvents = new ArrayList<String>();
 		List<Integer> ids = eventsMap.keySet().stream().collect(Collectors.toList());
 		for (var id : ids) {
@@ -141,13 +150,14 @@ public class EventController {
 
 	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
 	public ResponseEntity<?> deleteEvent(@PathVariable Integer id, @RequestParam String deleteType) {
-		// TODO what to do with the notifications
 		try {
 			Event event = eventService.getEventbyId(id);
+			List<Notification> notifications = eventService.getNotificationsOfEvent(id);
 			if (deleteType.equalsIgnoreCase("HARD"))
 				eventService.hardDeleteEvenet(event);
 			else
 				eventService.softDeleteEvenet(event);
+			notificationManager.deleteNotifications(notifications);
 			return ResponseEntity.status(HttpStatus.OK).body(event);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
@@ -170,21 +180,19 @@ public class EventController {
 		}
 		try {
 			if (deleteType.equalsIgnoreCase("HARD"))
-				for(var e : events)
+				for (var e : events)
 					eventService.hardDeleteEvenet(e);
 			else
-				for(var e : events)
+				for (var e : events)
 					eventService.softDeleteEvenet(e);
-			if(notDeleted.isEmpty())
-				return ResponseEntity.status(HttpStatus.OK).body(events); 
+			if (notDeleted.isEmpty())
+				return ResponseEntity.status(HttpStatus.OK).body(events);
 			else
 				return ResponseEntity.status(HttpStatus.valueOf(500)).body(notDeleted);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
-		
-		
-		
+
 	}
 
 }

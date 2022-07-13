@@ -132,4 +132,8 @@ public class EventService {
 		 eventDao.deleteEvent(event);
 	}
 
+	public List<Notification> getNotificationsOfEvent(Integer eventId) throws DaoException {
+		return notificationDao.getNotificationsByEventId(eventId);
+	}
+
 }

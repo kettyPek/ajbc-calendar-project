@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.daos.EventDao;
@@ -25,10 +24,10 @@ public class UserService {
 
 	@Autowired
 	private UserDao userDao;
-	
+
 	@Autowired
 	private EventDao eventDao;
-	
+
 	@Autowired
 	private NotificationDao notificationDao;
 
@@ -36,7 +35,7 @@ public class UserService {
 		user.setJoinDate(LocalDate.now());
 		userDao.addUser(user);
 	}
-	
+
 	public void updateUser(User user) throws DaoException {
 		userDao.updateUser(user);
 	}
@@ -46,51 +45,52 @@ public class UserService {
 		user.setEvents(filterdEventsToUsersNotificationsOnly(user));
 		return user;
 	}
-	
+
 	public List<User> getAllUsers() throws DaoException {
 		// TODO not displaying notifications
 		List<User> users = userDao.getAllUsers();
-		for(int i=0; i<users.size(); i++) {
-			users.get(i).setEvents(filterdEventsToUsersNotificationsOnly(users.get(i)));		
+		for (int i = 0; i < users.size(); i++) {
+			users.get(i).setEvents(filterdEventsToUsersNotificationsOnly(users.get(i)));
 		}
 		return users;
 	}
-	
+
 	public List<User> getAllUsersInEvent(Integer eventId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return event.getGuests().stream().collect(Collectors.toList());
 	}
-	
+
 	public List<User> getAllUsersWithEventBetween(LocalDateTime start, LocalDateTime end) throws DaoException {
 		List<Event> events = eventDao.getEventsBetween(start, end);
 		Set<User> users = new HashSet<User>();
-		for(var e : events) 
-			for(var g : e.getGuests())
+		for (var e : events)
+			for (var g : e.getGuests())
 				users.add(g);
 		return users.stream().collect(Collectors.toList());
 	}
 
 	public User getUserByEmail(String email) throws DaoException {
-		User user =  userDao.getUserByEmail(email);
+		User user = userDao.getUserByEmail(email);
 		user.setEvents(filterdEventsToUsersNotificationsOnly(user));
 		return user;
 	}
 
 	public void hardDeleteUser(User user) throws DaoException {
 		Set<Event> usersEvents = user.getEvents();
-		for(var event : usersEvents) {
-			if(event.getOwnerId()==user.getUserId())
+		for (var event : usersEvents) {
+			if (event.getOwnerId() == user.getUserId())
 				event.setOwner(null);
-			event.setGuests(event.getGuests().stream().filter(u -> u.getUserId()!=user.getUserId()).collect(Collectors.toSet()));
+			event.setGuests(event.getGuests().stream().filter(u -> u.getUserId() != user.getUserId())
+					.collect(Collectors.toSet()));
 			eventDao.updateEvent(event);
 		}
 		List<Notification> usersNotifications = notificationDao.getAllNotificationsByUserId(user.getUserId());
 		notificationDao.deleteAll(usersNotifications);
-		userDao.hardDeleteUser(user);	
+		userDao.hardDeleteUser(user);
 	}
 
 	public void softDeleteUser(User user) throws DaoException {
-		userDao.softDeleteUser(user);	
+		userDao.softDeleteUser(user);
 	}
 
 	public void logInUser(Subscription subscription, User user) throws DaoException {
@@ -100,26 +100,28 @@ public class UserService {
 		user.setLoggedIn(true);
 		userDao.updateUser(user);
 	}
-	
+
 	public void logOutUser(User user) throws DaoException {
 		user.setEndPoint(null);
 		user.setLoggedIn(false);
 		userDao.updateUser(user);
 	}
-	
-	private Set<Event> filterdEventsToUsersNotificationsOnly(User user){ 
+
+	private Set<Event> filterdEventsToUsersNotificationsOnly(User user) {
 		Set<Event> events = user.getEvents();
 		Set<Event> eventsFilterd = new HashSet<Event>();
 		Set<Notification> notifications;
-		for(Event event : events ) {
-			notifications = event.getNotifications().stream().filter(n -> n.getUserId() == user.getUserId()).collect(Collectors.toSet());	
+		for (Event event : events) {
+			notifications = event.getNotifications().stream().filter(n -> n.getUserId() == user.getUserId())
+					.collect(Collectors.toSet());
 			event.setNotifications(notifications);
 			eventsFilterd.add(event);
 		}
 		return eventsFilterd;
 	}
 
-	
+	public List<Notification> getAllnotificationsOfUser(Integer userId) throws DaoException {
+		return notificationDao.getAllNotificationsByUserId(userId);
+	}
 
-	
 }

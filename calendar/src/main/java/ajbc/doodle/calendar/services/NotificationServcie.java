@@ -86,6 +86,10 @@ public class NotificationServcie {
 		notificationDao.deleteAll(notifications);
 	}
 	
+	public Notification getLastAdded() throws DaoException {
+		return notificationDao.getLastAdded();
+	}
+	
 	public boolean isEventExist(Integer evenId) {
 		try {
 			eventDao.getEventById(evenId);

@@ -57,4 +57,8 @@ public interface NotificationDao {
 	public default void deleteAll(List<Notification> notifications) throws DaoException {
 		throw new DaoException("Method not implemented");
 	}
+	
+	public default Notification getLastAdded() throws DaoException {
+		throw new DaoException("Method not implemented");
+	}
 }

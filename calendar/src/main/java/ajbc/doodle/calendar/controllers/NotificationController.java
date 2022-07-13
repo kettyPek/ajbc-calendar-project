@@ -48,8 +48,7 @@ public class NotificationController {
 		try {
 			if (notificationService.userIsParticipant(notification.getEventId(), notification.getUserId())) {
 				notificationService.addNotificationToEventOfUser(notification);
-				notification = notificationService.getLastLoggedNotification(notification.getUserId(),
-						notification.getEventId());
+				notification = notificationService.getLastAdded();
 				notificationManager.addNotification(notification);
 				return ResponseEntity.status(HttpStatus.CREATED).body(notification);
 			}
@@ -69,8 +68,7 @@ public class NotificationController {
 					throw new DaoException("User is not participating in ther event");
 			for(var notif : notifications) {
 				notificationService.addNotificationToEventOfUser(notif);
-				lastLogged = notificationService.getLastLoggedNotification(notif.getUserId(),
-						notif.getEventId());
+				lastLogged = notificationDao.getLastAdded();
 				loggedNotifications.add(lastLogged);
 			}
 			notificationManager.addNotificationsFromList(loggedNotifications);
