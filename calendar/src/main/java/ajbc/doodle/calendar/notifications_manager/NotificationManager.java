@@ -38,9 +38,10 @@ public class NotificationManager {
 	private NotificationManagerService managerService;
 
 	private PushProp pushProps;
+	
 	private ExecutorService threadPool;
 	private Thread th;
-
+	
 	protected PriorityBlockingQueue<Notification> notificationsQueue = new PriorityBlockingQueue<Notification>(
 			INITIAL_CAPACITY, new Comparator<Notification>() {
 				@Override
