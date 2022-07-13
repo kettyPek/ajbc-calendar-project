@@ -161,11 +161,11 @@ public class NotificationManager {
 		initiateThread();
 	}
 
-	private void addNotifiationToQueue(Notification notification) {
+	protected void addNotifiationToQueue(Notification notification) {
 		notificationsQueue.add(notification);
 	}
 
-	private void updateNotificationInQueue(Notification notification) {
+	protected void updateNotificationInQueue(Notification notification) {
 		Iterator<Notification> iterator = notificationsQueue.iterator();
 		while (iterator.hasNext()) {
 			if (iterator.next().getNotificationId() == notification.getNotificationId()) {
@@ -176,7 +176,7 @@ public class NotificationManager {
 		}
 	}
 
-	private void deleteNotificationFromQueue(Notification notification) {
+	protected void deleteNotificationFromQueue(Notification notification) {
 		Iterator<Notification> iterator = notificationsQueue.iterator();
 		while (iterator.hasNext()) {
 			if (iterator.next().getNotificationId() == notification.getNotificationId()) {

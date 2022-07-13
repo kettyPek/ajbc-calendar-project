@@ -26,13 +26,14 @@ import ajbc.doodle.calendar.entities.Notification;
 
 import ajbc.doodle.calendar.notifications_manager.NotificationManager;
 import ajbc.doodle.calendar.services.NotificationServcie;
-
+/**
+ * Handle Notification API requests
+ * @author ketty
+ *
+ */
 @RequestMapping("/notifications")
 @RestController
 public class NotificationController {
-
-	@Autowired
-	private NotificationDao notificationDao;
 
 	@Autowired
 	private NotificationServcie notificationService;
@@ -43,6 +44,11 @@ public class NotificationController {
 	@Autowired
 	private NotificationManager notificationManager;
 
+	/**
+	 * Create new notification and insert it to database and notifications queue in NotificationManager
+	 * @param notification - notification to create
+	 * @return created notification
+	 */
 	@RequestMapping(method = RequestMethod.POST)
 	public ResponseEntity<?> createNotification(@RequestBody Notification notification) {
 		try {
@@ -58,6 +64,11 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Create new notifications from list and insert them to database and notifications queue in NotificationManager
+	 * @param notifications - list of notification to create
+	 * @return list of created notification
+	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/list")
 	public ResponseEntity<?> createNotificationsFromList(@RequestBody List<Notification> notifications) {
 		try {
@@ -68,7 +79,7 @@ public class NotificationController {
 					throw new DaoException("User is not participating in ther event");
 			for(var notif : notifications) {
 				notificationService.addNotificationToEventOfUser(notif);
-				lastLogged = notificationDao.getLastAdded();
+				lastLogged = notificationService.getLastAdded();
 				loggedNotifications.add(lastLogged);
 			}
 			notificationManager.addNotificationsFromList(loggedNotifications);
@@ -78,6 +89,11 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Get notification by id
+	 * @param id - notification's id
+	 * @return notification if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/{id}")
 	public ResponseEntity<?> getNotificationbyId(@PathVariable Integer id) {
 		try {
@@ -88,6 +104,12 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Update notification in database and notifications queue in NotificationManager
+	 * @param notification - notification to update
+	 * @param id - notification's id
+	 * @return updated notification if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.PUT, path = "/{id}")
 	public ResponseEntity<?> updateNotification(@RequestBody Notification notification, @PathVariable Integer id) {
 		try {
@@ -100,6 +122,11 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Update notifications in database and notifications queue in NotificationManager
+	 * @param notificationsMap - map of notifications, key - notification id, value - notification.
+	 * @return list of updated notifications if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.PUT)
 	public ResponseEntity<?> updateNotificationsFromList(@RequestBody Map<Integer, Notification> notificationsMap) {
 		try {
@@ -114,6 +141,15 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Get notifications list from database by parameters 
+	 * @param map - map of parameters , key - parameter name, value - parameter
+	 *               value
+	 * userId and eventId : notifications of user for specific event.
+	 * eventId : all notifications of event 
+	 * no parameters : all notifications             
+	 * @return list of notifications if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<?> getNotifications(@RequestParam Map<String, String> map) {
 		List<Notification> notifications;
@@ -131,10 +167,16 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Delete notification from database and notification queue in NotificationManager
+	 * @param id - notification's id
+	 * @param deleteType - SOFT: deactivate user. HARD: hard delete from database
+	 * @return deleted notification if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
 	public ResponseEntity<?> deleteNotification(@PathVariable Integer id, @RequestParam String deleteType) {
 		try {
-			Notification notification = notificationDao.getNotificationsById(id);
+			Notification notification = notificationService.getNotificationById(id);
 			if (deleteType.equalsIgnoreCase("HARD"))
 				notificationService.hardDeleteNotification(notification);
 			else
@@ -146,6 +188,12 @@ public class NotificationController {
 		}
 	}
 
+	/**
+	 * Delete list of notifications from database and notification queue in NotificationManager
+	 * @param ids - id's of notifications to be deleted
+	 * @param deleteType - SOFT: deactivate user. HARD: hard delete from database
+	 * @return deleted notifications if action succeeded, otherwise returns exception details
+	 */
 	@RequestMapping(method = RequestMethod.DELETE)
 	public ResponseEntity<?> deleteNotificationListOfNotifications(@RequestBody List<Integer> ids,
 			@RequestParam String deleteType) {
@@ -163,11 +211,13 @@ public class NotificationController {
 		}
 	}
 
+
 	@GetMapping(path = "/publicSigningKey", produces = "application/octet-stream")
 	public byte[] publicSigningKey() {
 		return pushProps.getServerKeys().getPublicKeyUncompressed();
 	}
 
+	
 	@GetMapping(path = "/publicSigningKeyBase64")
 	public String publicSigningKeyBase64() {
 		return pushProps.getServerKeys().getPublicKeyBase64();
