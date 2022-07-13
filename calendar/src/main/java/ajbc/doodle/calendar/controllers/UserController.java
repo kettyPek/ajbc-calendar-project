@@ -1,9 +1,10 @@
 package ajbc.doodle.calendar.controllers;
 
 import java.time.LocalDateTime;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ import ajbc.doodle.calendar.services.UserService;
 
 /**
  * Handle User's API requests
+ * 
  * @author ketty
  *
  */
@@ -84,6 +86,26 @@ public class UserController {
 	}
 
 	/**
+	 * Create users from list and insert to database
+	 * 
+	 * @param users - list of users to create
+	 * @return - list of created users
+	 */
+	@RequestMapping(method = RequestMethod.POST, path = "/list")
+	public ResponseEntity<?> createUserFromList(@RequestBody List<User> users) {
+		try {
+			List<User> createdUsers = new ArrayList<User>();
+			for (var user : users) {
+				userService.addUser(user);
+				createdUsers.add(userService.getUserById(user.getUserId()));
+			}
+			return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+
+	/**
 	 * Updates user in database
 	 * 
 	 * @param user - user to update
@@ -100,6 +122,30 @@ public class UserController {
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
+	}
+
+	/**
+	 * Update list of users in database
+	 * 
+	 * @param users - map of users. key - user's id, value - user
+	 * @return list of updated users if action succeeded, otherwise returns
+	 *         unsuccessful updates and exception details
+	 */
+	@RequestMapping(method = RequestMethod.PUT, path = "/list")
+	public ResponseEntity<?> updateUsersFromList(@RequestBody Map<Integer, User> users) {
+		List<String> unudatedUsers = new ArrayList<String>();
+		List<Integer> ids = users.keySet().stream().collect(Collectors.toList());
+		for (var id : ids) {
+			try {
+				users.get(id).setUserId(id);
+				userService.updateUser(users.get(id));
+			} catch (DaoException e) {
+				unudatedUsers.add("user with id " + id + "wasnt updated: " + e.getMessage());
+			}
+		}
+		if (!unudatedUsers.isEmpty())
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(unudatedUsers);
+		return ResponseEntity.status(HttpStatus.OK).build();
 	}
 
 	/**
@@ -162,10 +208,12 @@ public class UserController {
 	}
 
 	/**
-	 * Log in user 
-	 * @param subscription  - user's subscription
-	 * @param email - user's email
-	 * @return response massage if action succeeded, otherwise returns exception details
+	 * Log in user
+	 * 
+	 * @param subscription - user's subscription
+	 * @param email        - user's email
+	 * @return response massage if action succeeded, otherwise returns exception
+	 *         details
 	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/login/{email}")
 	public ResponseEntity<?> logIn(@RequestBody Subscription subscription,
@@ -180,9 +228,11 @@ public class UserController {
 	}
 
 	/**
-	 * Log out user 
+	 * Log out user
+	 * 
 	 * @param email - user's email
-	 * @return response massage if action succeeded, otherwise returns exception details
+	 * @return response massage if action succeeded, otherwise returns exception
+	 *         details
 	 */
 	@RequestMapping(method = RequestMethod.POST, path = "/logout/{email}")
 	public ResponseEntity<?> logOut(@PathVariable(required = false) String email) {
@@ -197,6 +247,7 @@ public class UserController {
 
 	/**
 	 * Check if user subscribed
+	 * 
 	 * @param subscription - user's subscription
 	 * @return - true if user subscribed, otherwise returns false;
 	 * @throws DaoException
