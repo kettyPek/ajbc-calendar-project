@@ -79,15 +79,15 @@ public class DatabaseSeeder {
 	}
 
 	private void seedNotificationTable() throws DaoException {
-		User user1 = userDao.getUserById(1);
-		User user2 = userDao.getUserById(2);
-		User user3 = userDao.getUserById(3);
-
-		Event event1 = eventDao.getEventById(1);
-		Event event2 = eventDao.getEventById(2);
-
 		List<Notification> notifications = notificationDao.getAllNotifications();
 		if (notifications == null || notifications.size() == 0) {
+			User user1 = userDao.getUserById(1);
+			User user2 = userDao.getUserById(2);
+			User user3 = userDao.getUserById(3);
+
+			Event event1 = eventDao.getEventById(1);
+			Event event2 = eventDao.getEventById(2);
+			
 			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE));
 			notificationDao.addNotificationToDb(new Notification(event1, user1, "Study", REMINDER_UNITS, NOTIFY_BEFORE+1));
 			notificationDao.addNotificationToDb(new Notification(event2, user3, "Clean up", REMINDER_UNITS, NOTIFY_BEFORE+2));

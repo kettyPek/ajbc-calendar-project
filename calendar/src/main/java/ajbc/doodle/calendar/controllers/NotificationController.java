@@ -43,24 +43,48 @@ public class NotificationController {
 	@Autowired
 	private NotificationManager notificationManager;
 
-	@RequestMapping(method = RequestMethod.GET, path = "/id/{id}")
-	public ResponseEntity<?> getNotifications(@PathVariable Integer id) {
+	@RequestMapping(method = RequestMethod.POST)
+	public ResponseEntity<?> createNotification(@RequestBody Notification notification) {
 		try {
-			Notification notification = notificationService.getNotificationById(id);
-			return ResponseEntity.status(HttpStatus.OK).body(notification);
+			if (notificationService.userIsParticipant(notification.getEventId(), notification.getUserId())) {
+				notificationService.addNotificationToEventOfUser(notification);
+				notification = notificationService.getLastLoggedNotification(notification.getUserId(),
+						notification.getEventId());
+				notificationManager.addNotification(notification);
+				return ResponseEntity.status(HttpStatus.CREATED).body(notification);
+			}
+			throw new DaoException("User is not participating in ther event");
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
 
-	@RequestMapping(method = RequestMethod.POST)
-	public ResponseEntity<?> createNotification(@RequestBody Notification notification, @RequestParam int userId,
-			@RequestParam Integer eventId) {
+	@RequestMapping(method = RequestMethod.POST, path = "/list")
+	public ResponseEntity<?> createNotificationsFromList(@RequestBody List<Notification> notifications) {
 		try {
-			notificationService.addNotificationToEventOfUser(userId, eventId, notification);
-			notification = notificationService.getLastLoggedNotification(eventId, eventId);
-			notificationManager.addNotification(notification);
-			return ResponseEntity.status(HttpStatus.CREATED).body(notification);
+			Notification lastLogged;
+			List<Notification> loggedNotifications = new ArrayList<Notification>();
+			for(var notif : notifications) 
+				if(!notificationService.userIsParticipant(notif.getEventId(), notif.getUserId()))
+					throw new DaoException("User is not participating in ther event");
+			for(var notif : notifications) {
+				notificationService.addNotificationToEventOfUser(notif);
+				lastLogged = notificationService.getLastLoggedNotification(notif.getUserId(),
+						notif.getEventId());
+				loggedNotifications.add(lastLogged);
+			}
+			notificationManager.addNotificationsFromList(loggedNotifications);
+			return ResponseEntity.status(HttpStatus.CREATED).body(loggedNotifications);
+		} catch (DaoException e) {
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
+		}
+	}
+
+	@RequestMapping(method = RequestMethod.GET, path = "/{id}")
+	public ResponseEntity<?> getNotificationbyId(@PathVariable Integer id) {
+		try {
+			Notification notification = notificationService.getNotificationById(id);
+			return ResponseEntity.status(HttpStatus.OK).body(notification);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
@@ -70,25 +94,22 @@ public class NotificationController {
 	public ResponseEntity<?> updateNotification(@RequestBody Notification notification, @PathVariable Integer id) {
 		try {
 			notificationService.updateNotificaion(notification, id);
-			notificationManager.updatedNotification(notification);
 			notification = notificationService.getNotificationById(id);
+			notificationManager.updatedNotification(notification);
 			return ResponseEntity.status(HttpStatus.OK).body(notification);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.PUT)
-	public ResponseEntity<?> updateNotificationsFromList(@RequestBody Map<Integer,Notification> notificationsMap) {
+	public ResponseEntity<?> updateNotificationsFromList(@RequestBody Map<Integer, Notification> notificationsMap) {
 		try {
-			Notification updated;
 			List<Integer> ids = notificationsMap.keySet().stream().collect(Collectors.toList());
-			for(var id : ids) {
+			for (var id : ids) 
 				notificationService.updateNotificaion(notificationsMap.get(id), id);
-				updated = notificationService.getNotificationById(id);
-				notificationManager.updatedNotification(updated);
-			}
 			List<Notification> updatedNotifications = getNotificationsById(ids);
+			notificationManager.updatedNotificationsFromList(updatedNotifications);
 			return ResponseEntity.status(HttpStatus.OK).body(updatedNotifications);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
@@ -102,7 +123,7 @@ public class NotificationController {
 			if (map.containsKey("userId") && map.containsKey("eventId"))
 				notifications = notificationService.getAllNotificationsOfUserForEvent(
 						Integer.parseInt(map.get("userId")), Integer.parseInt(map.get("eventId")));
-			if(map.containsKey("eventId"))
+			if (map.containsKey("eventId"))
 				notifications = notificationService.getNotificationsByEventId(Integer.parseInt(map.get("eventId")));
 			else
 				notifications = notificationService.getAllNotifications();
@@ -111,12 +132,12 @@ public class NotificationController {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.DELETE, path = "/{id}")
-	public ResponseEntity<?> deleteNotification(@PathVariable Integer id , @RequestParam String deleteType) {
+	public ResponseEntity<?> deleteNotification(@PathVariable Integer id, @RequestParam String deleteType) {
 		try {
 			Notification notification = notificationDao.getNotificationsById(id);
-			if(deleteType.equalsIgnoreCase("HARD"))
+			if (deleteType.equalsIgnoreCase("HARD"))
 				notificationService.hardDeleteNotification(notification);
 			else
 				notificationService.softDeleteNotification(notification);
@@ -126,18 +147,18 @@ public class NotificationController {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.DELETE)
-	public ResponseEntity<?> deleteNotificationListOfNotifications(@RequestBody List<Integer> ids, @RequestParam String deleteType) {
+	public ResponseEntity<?> deleteNotificationListOfNotifications(@RequestBody List<Integer> ids,
+			@RequestParam String deleteType) {
 		try {
 			List<Notification> notifications = getNotificationsById(ids);
-			if(deleteType.equalsIgnoreCase("HARD"))
+			if (deleteType.equalsIgnoreCase("HARD"))
 				notificationService.hardDeleteListOfNotifications(notifications);
 			else
-				for(var notif : notifications)
+				for (var notif : notifications)
 					notificationService.softDeleteNotification(notif);
-			for(var notif : notifications)
-				notificationManager.deleteNotification(notif);
+			notificationManager.deleteNotifications(notifications);
 			return ResponseEntity.status(HttpStatus.OK).body(ids);
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage());
@@ -160,12 +181,13 @@ public class NotificationController {
 		notificationManager.getNotificatiosFromDb();
 		notificationManager.initiateThread();
 	}
-	
-	private List<Notification> getNotificationsById(List<Integer> ids) throws DaoException{
+
+	private List<Notification> getNotificationsById(List<Integer> ids) throws DaoException {
 		List<Notification> notifications = new ArrayList<Notification>();
-		for(var id : ids) 
+		for (var id : ids)
 			notifications.add(notificationService.getNotificationById(id));
 		return notifications;
 	}
-
+	
+	
 }

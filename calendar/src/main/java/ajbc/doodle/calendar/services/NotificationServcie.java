@@ -32,11 +32,9 @@ public class NotificationServcie {
 		return notificationDao.getNotificationsById(notificationId);
 	}
 
-	public void addNotificationToEventOfUser(int userId, int eventId, Notification notification) throws DaoException {
-		if (!userIsParticipant(eventId, userId))
-			throw new DaoException("This user is not participates in this event");
-		notification.setEvent(eventDao.getEventById(eventId));
-		notification.setUser(userDao.getUserById(userId));
+	public void addNotificationToEventOfUser(Notification notification) throws DaoException {
+		notification.setEvent(eventDao.getEventById(notification.getEventId()));
+		notification.setUser(userDao.getUserById(notification.getUserId()));
 		notificationDao.addNotificationToDb(notification);
 	}
 	
@@ -55,6 +53,7 @@ public class NotificationServcie {
 	// Queries
 	
 	public List<Notification> getNotificationsByEventId(Integer eventId) throws DaoException{
+		eventDao.getEventById(eventId);
 		return notificationDao.getNotificationsByEventId(eventId);
 	}
 
@@ -72,7 +71,7 @@ public class NotificationServcie {
 		return  notifications.get(notifications.size()-1);
 	}
 
-	private boolean userIsParticipant(int eventId, int userId) throws DaoException {
+	public boolean userIsParticipant(int eventId, int userId) throws DaoException {
 		Event event = eventDao.getEventById(eventId);
 		return event.getGuests().stream().map(User::getUserId).anyMatch(id -> id == userId);
 	}
@@ -86,6 +85,25 @@ public class NotificationServcie {
 	public void hardDeleteListOfNotifications(List<Notification> notifications) throws DaoException {
 		notificationDao.deleteAll(notifications);
 	}
+	
+	public boolean isEventExist(Integer evenId) {
+		try {
+			eventDao.getEventById(evenId);
+			return true;
+		}catch (DaoException e) {
+			return false;
+		}	
+	}
+	
+	public boolean isUserExist(Integer userId) {
+		try {
+			userDao.getUserById(userId);
+			return true;
+		}catch (DaoException e) {
+			return false;
+		}
+	}
+
 
 
 }

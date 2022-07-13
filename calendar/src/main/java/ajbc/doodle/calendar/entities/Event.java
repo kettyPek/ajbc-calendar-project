@@ -3,9 +3,9 @@ package ajbc.doodle.calendar.entities;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+
 import java.util.Set;
-import java.util.function.Function;
+
 import java.util.stream.Collectors;
 
 import javax.persistence.CascadeType;
@@ -25,17 +25,9 @@ import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import javax.persistence.PostPersist;
 import javax.persistence.PostUpdate;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
+
 import javax.persistence.Table;
 import javax.persistence.Transient;
-
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
-import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -60,12 +52,11 @@ public class Event {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer eventId;
 
-	@JsonProperty(access = Access.READ_ONLY)
 	@Column(insertable = false, updatable = false)
 	private Integer ownerId;
 
 	@JsonIgnore
-	@ManyToOne(cascade = CascadeType.REMOVE)
+	@ManyToOne
 	@JoinColumn(name = "ownerId")
 	private User owner;
 
@@ -82,15 +73,15 @@ public class Event {
 	private boolean inactive;
 
 	@JsonIgnore
-	@ManyToMany(cascade = { CascadeType.MERGE},fetch = FetchType.EAGER)
+	@ManyToMany(cascade = { CascadeType.MERGE }, fetch = FetchType.EAGER)
 	@JoinTable(name = "Users_Events", joinColumns = @JoinColumn(name = "eventId"), inverseJoinColumns = @JoinColumn(name = "userId"))
 	private Set<User> guests = new HashSet<User>();
-	
+
 	@Transient
 	private List<String> guestsEmails;
 
 	@JsonProperty(access = Access.READ_ONLY)
-	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE } , fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "event", cascade = { CascadeType.MERGE }, fetch = FetchType.EAGER)
 	private Set<Notification> notifications = new HashSet<Notification>();
 
 	public Event(User owner, String title, boolean isAllDay, LocalDateTime startDateTime, LocalDateTime endDateTime,

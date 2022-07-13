@@ -14,7 +14,7 @@ import ajbc.doodle.calendar.entities.User;
 
 @SuppressWarnings("unchecked")
 @Component(value = "userHT")
-public class UserHibernateTemplate implements UserDao{
+public class UserHibernateTemplate implements UserDao {
 
 	@Autowired
 	private HibernateTemplate template;
@@ -22,16 +22,16 @@ public class UserHibernateTemplate implements UserDao{
 	// CRUD
 	@Override
 	public void addUser(User user) throws DaoException {
-		if(emailExistInDb(user))
+		if (emailExistInDb(user))
 			throw new DaoException("Email already exists");
 		template.persist(user);
 	}
-	
+
 	@Override
 	public void updateUser(User user) throws DaoException {
-		if(!userExistInDb(user.getUserId()))
+		if (!userExistInDb(user.getUserId()))
 			throw new DaoException("No such user in DB");
-		if(emailExistInDb(user))
+		if (emailExistInDb(user))
 			throw new DaoException("Email already exists");
 		template.merge(user);
 	}
@@ -52,42 +52,41 @@ public class UserHibernateTemplate implements UserDao{
 	}
 
 	@Override
-	public User getUserByEmail(String email) throws DaoException  {
+	public User getUserByEmail(String email) throws DaoException {
 		DetachedCriteria criteria = DetachedCriteria.forClass(User.class);
 		Criterion criterion = Restrictions.eq("email", email);
 		criteria.add(criterion);
-		List<User> users = (List<User>)template.findByCriteria(criteria);
-		if(users == null || users.size() == 0)
-			throw new DaoException("No such user in DB");
+		List<User> users = (List<User>) template.findByCriteria(criteria);
+		if (users == null || users.size() == 0)
+			throw new DaoException("No user with email " + email + " in DB");
 		return users.get(0);
 	}
 
 	@Override
 	public void hardDeleteUser(User user) throws DaoException {
-		// TODO hard delete doesn't work
 		template.delete(user);
 	}
 
 	@Override
 	public void softDeleteUser(User user) throws DaoException {
 		user.setInactive(true);
-		updateUser(user);	
+		updateUser(user);
 	}
-	
+
 	private boolean emailExistInDb(User user) throws DaoException {
 		List<User> users = getAllUsers();
-		for(User u : users) {
-			if(u.getEmail().equals(user.getEmail()) && u.getUserId() != user.getUserId())
+		for (User u : users) {
+			if (u.getEmail().equals(user.getEmail()) && u.getUserId() != user.getUserId())
 				return true;
 		}
 		return false;
 	}
-	
+
 	private boolean userExistInDb(Integer userId) {
 		User user = template.get(User.class, userId);
 		if (user == null)
 			return false;
 		return true;
 	}
-	
+
 }

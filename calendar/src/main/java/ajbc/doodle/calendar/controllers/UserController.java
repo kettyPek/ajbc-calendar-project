@@ -1,5 +1,7 @@
 package ajbc.doodle.calendar.controllers;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,11 +31,20 @@ public class UserController {
 	private UserService userService;
 
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<List<User>> getAllUsers() throws DaoException {
-		List<User> allusers = userService.getAllUsers();
-		if (allusers == null)
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		return ResponseEntity.ok(allusers);
+	public ResponseEntity<?> getAllUsers(@RequestParam Map<String,String> params) throws DaoException {
+		try {
+			List<User> users;
+			if(params.containsKey("eventId"))
+				users = userService.getAllUsersInEvent(Integer.parseInt(params.get("eventId")));
+			else if(params.containsKey("startDateTime") && params.containsKey("endDateTime"))
+					users = userService.getAllUsersWithEventBetween(LocalDateTime.parse(params.get("startDateTime")),
+					LocalDateTime.parse(params.get("endDateTime")));
+			else
+				users = userService.getAllUsers();
+			return ResponseEntity.status(HttpStatus.OK).body(users);
+		}catch(DaoException e){
+			return ResponseEntity.status(HttpStatus.valueOf(500)).body(e.getMessage()); 
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.POST)
@@ -94,18 +105,19 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.POST, path = "/login/{email}")
-	public ResponseEntity<?> logIn(@RequestBody Subscription subscription, @PathVariable(required = false) String email) throws DaoException {
+	public ResponseEntity<?> logIn(@RequestBody Subscription subscription, @PathVariable(required = false) String email)
+			throws DaoException {
 		try {
 			User user = userService.getUserByEmail(email);
-			userService.logInUser(subscription,user);
+			userService.logInUser(subscription, user);
 			return ResponseEntity.ok().body("User logged in");
 		} catch (DaoException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 	}
-	
+
 	@RequestMapping(method = RequestMethod.POST, path = "/logout/{email}")
 	public ResponseEntity<?> logOut(@PathVariable(required = false) String email) throws DaoException {
 		try {
@@ -116,14 +128,14 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 		}
 	}
-	
+
 	@PostMapping("/isSubscribed")
 	public boolean isSubscribed(@RequestBody SubscriptionEndpoint subscription) throws DaoException {
 		List<User> users = userService.getAllUsers();
-		for(User u : users)
-			if(u.getEndPoint() != null && u.getEndPoint().equals(subscription.getEndpoint()))
-					return true;
-			return false;
+		for (User u : users)
+			if (u.getEndPoint() != null && u.getEndPoint().equals(subscription.getEndpoint()))
+				return true;
+		return false;
 	}
 
 }

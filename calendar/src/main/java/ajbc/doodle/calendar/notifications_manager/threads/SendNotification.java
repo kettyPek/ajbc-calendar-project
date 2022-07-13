@@ -19,14 +19,18 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.auth0.jwt.JWT;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import ajbc.doodle.calendar.Application;
 import ajbc.doodle.calendar.PushProp;
+import ajbc.doodle.calendar.daos.DaoException;
 import ajbc.doodle.calendar.entities.Notification;
 import ajbc.doodle.calendar.entities.User;
 import ajbc.doodle.calendar.entities.webpush.PushMessage;
+import ajbc.doodle.calendar.services.NotificationManagerService;
 
 public class SendNotification implements Runnable {
 
@@ -43,25 +47,21 @@ public class SendNotification implements Runnable {
 
 	@Override
 	public void run() {
-		System.out.println("in run thread");
 		Object message = new PushMessage("message: ", notification.getTitle());
 		byte[] result;
 		try {
 			result = pushProps.getCryptoService().encrypt(pushProps.getObjectMapper().writeValueAsString(message),
 					user.getP256dh(), user.getAuth(), 0);
 			sendPushMessage(user.getEndPoint(), result);
-			System.out.println("massge: " + notification.getTitle() + " sent to user " + user.getEmail());
-
+			System.out.println("finished run thread");
 		} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
 				| InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException | JsonProcessingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 
 		}
-
 	}
-	
+
 	/**
 	 * @return true if the subscription is no longer valid and can be removed, false
 	 *         if everything is okay
@@ -94,7 +94,8 @@ public class SendNotification implements Runnable {
 		}
 
 		HttpRequest request = httpRequestBuilder.uri(endpointURI).header("TTL", "180")
-				.header("Authorization", "vapid t=" + token + ", k=" + pushProps.getServerKeys().getPublicKeyBase64()).build();
+				.header("Authorization", "vapid t=" + token + ", k=" + pushProps.getServerKeys().getPublicKeyBase64())
+				.build();
 		try {
 			HttpResponse<Void> response = pushProps.getHttpClient().send(request, BodyHandlers.discarding());
 
